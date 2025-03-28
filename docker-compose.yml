@@ -23,11 +23,11 @@ services:
     image: postgres:13
 
     environment:
-      POSTGRES_DB: developer_evaluation
-      POSTGRES_USER: developer
-      POSTGRES_PASSWORD: ev@luAt10n
+      POSTGRES_DB: DeveloperEvaluation
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: Pass@word
     ports:
-      - "5432"
+      - "5432:5432"
     restart: unless-stopped
 
   ambev.developerevaluation.nosql:
@@ -35,9 +35,9 @@ services:
     image: mongo:8.0    
     environment:
         MONGO_INITDB_ROOT_USERNAME: developer
-        MONGO_INITDB_ROOT_PASSWORD: ev@luAt10n
+        MONGO_INITDB_ROOT_PASSWORD: Pass@word
     ports:
-      - "27017"
+      - "27017:27017"
 
   ambev.developerevaluation.cache:
     container_name: ambev_developer_evaluation_cache 
@@ -45,6 +45,6 @@ services:
     command: redis-server --requirepass ev@luAt10n
     environment:
        MONGO_INITDB_ROOT_USERNAME: developer
-       MONGO_INITDB_ROOT_PASSWORD: ev@luAt10n
+       MONGO_INITDB_ROOT_PASSWORD: Pass@word
     ports:
-       - "6379"
+       - "6379:6379"
