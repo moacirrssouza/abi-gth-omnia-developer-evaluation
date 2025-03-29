@@ -6,7 +6,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 /// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total
 /// amount. Also tracks sale items and cancellation status.
 /// </summary>
-public abstract class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
+public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
 {
 	/// <summary>
 	/// The sale's unique identifier.

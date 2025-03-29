@@ -69,19 +69,21 @@ public class SalesController : ControllerBase
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
 	[HttpGet]
-	[ProducesResponseType(typeof(IEnumerable<ListSalesResponse>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponseWithData<IEnumerable<ListSalesResponse>>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> GetSales(CancellationToken cancellationToken)
+	public async Task<IActionResult> GetListSales(CancellationToken cancellationToken)
 	{
-		var command = _mapper.Map<GetSaleCommand>(cancellationToken);
-		var response = await _mediator.Send(command, cancellationToken);
+		var command = new ListSalesCommand();
+		var  results = await _mediator.Send(command, cancellationToken);
 
-		return Ok(new ApiResponseWithData<GetSaleResponse>
+		var response = new ApiResponseWithData<IEnumerable<ListSalesResponse>>
 		{
 			Success = true,
-			Message = "Sale retrieved successfully",
-			Data = _mapper.Map<GetSaleResponse>(response)
-		});
+			Message = results.Any() ? "Sales retrieved successfully" : "No sale available",
+			Data = _mapper.Map<IEnumerable<ListSalesResponse>>(results)
+		};
+
+		return Ok(response);
 	}
 
 	/// <summary>
