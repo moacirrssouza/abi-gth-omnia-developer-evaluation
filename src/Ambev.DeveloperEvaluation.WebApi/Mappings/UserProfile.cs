@@ -4,9 +4,9 @@ using AutoMapper;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Mappings;
 
-public class CreateUserRequestProfile : Profile
+public class UserProfile : Profile
 {
-    public CreateUserRequestProfile()
+    public UserProfile()
     {
         CreateMap<CreateUserRequest, CreateUserCommand>();
     }

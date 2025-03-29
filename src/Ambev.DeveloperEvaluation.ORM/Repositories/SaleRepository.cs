@@ -38,7 +38,7 @@ public class SaleRepository : ISaleRepository
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The sale if found, null otherwise</returns>
-	public async Task<IEnumerable<Sale>> GetAsync(CancellationToken cancellationToken = default)
+	public async Task<IEnumerable<Sale>> GetListAsync(CancellationToken cancellationToken = default)
 	{
 		return await _context.Sales.ToListAsync(cancellationToken);
 	}
