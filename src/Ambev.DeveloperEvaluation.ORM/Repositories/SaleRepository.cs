@@ -32,15 +32,14 @@ public class SaleRepository : ISaleRepository
 		await _context.SaveChangesAsync(cancellationToken);
 		return sale;
 	}
-
+	
 	/// <summary>
-	/// Retrieves a sale by their unique identifier
+	/// Retrieves a queryable collection of sales, including their associated sale items.
 	/// </summary>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The sale if found, null otherwise</returns>
-	public async Task<IEnumerable<Sale>> GetListAsync(CancellationToken cancellationToken = default)
+	/// <returns>Returns an IQueryable of Sale objects with included SaleItems.</returns>
+	public IQueryable<Sale> GetListQueryableSales(CancellationToken cancellationToken = default)
 	{
-		return await _context.Sales.Include(si => si.SaleItems).ToListAsync(cancellationToken);
+		return _context.Sales.Include(si => si.SaleItems).AsQueryable();
 	}
 
 	/// <summary>

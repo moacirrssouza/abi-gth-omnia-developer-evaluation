@@ -28,8 +28,6 @@ public class Program
             builder.Services.AddEndpointsApiExplorer();
 
             builder.AddBasicHealthChecks();
-            builder.Services.AddSwaggerGen();
-          //  builder.Services.AddSwagger("Ambev.DeveloperEvaluation.WebApi", "v1");
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ambev.DeveloperEvaluation.WebApi", Version = "v1" });

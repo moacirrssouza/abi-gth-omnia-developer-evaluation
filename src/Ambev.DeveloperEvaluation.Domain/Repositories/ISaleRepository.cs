@@ -17,13 +17,11 @@ public interface ISaleRepository
 	Task<Sale> CreateAsync(Sale sale, CancellationToken cancellationToken = default);
 	
 	/// <summary>
-	/// Retrieves a sale based on the provided sale object.
+	/// Retrieves a queryable collection of sales data.
 	/// </summary>
-	/// <param name="sale">The sale object containing the identifier and/or criteria to retrieve the sale.</param>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>A task representing the asynchronous operation. The task result contains the sale if found; otherwise, null.</returns>
-	Task<IEnumerable<Sale>> GetListAsync(CancellationToken cancellationToken = default);
-
+	/// <returns>Returns an IQueryable interface for querying sales.</returns>
+	IQueryable<Sale> GetListQueryableSales(CancellationToken cancellationToken = default);
+	
 	/// <summary>
 	/// Retrieves a sale by their unique identifier
 	/// </summary>

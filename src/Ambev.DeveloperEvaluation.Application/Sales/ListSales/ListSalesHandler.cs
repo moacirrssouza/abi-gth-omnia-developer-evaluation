@@ -1,4 +1,6 @@
-﻿using Ambev.DeveloperEvaluation.Domain.Repositories;
+﻿using Ambev.DeveloperEvaluation.Application.Common.Pagination;
+using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
 using MediatR;
 
@@ -7,7 +9,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 /// <summary>
 /// Handler responsible for processing the command to list sale.
 /// </summary>
-public class ListSalesHandler : IRequestHandler<ListSalesCommand, IEnumerable<ListSalesResult>>
+public class ListSalesHandler : IRequestHandler<ListSalesCommand, PaginatedList<ListSalesResult>>
 {
 	private readonly ISaleRepository _saleRepository;
 	private readonly IMapper _mapper;
@@ -29,12 +31,18 @@ public class ListSalesHandler : IRequestHandler<ListSalesCommand, IEnumerable<Li
 	/// <param name="command">The command object that triggers the sale listing process.</param>
 	/// <param name="cancellationToken">Token used to cancel the asynchronous operation if needed.</param>
 	/// <returns>A collection of <see cref="ListSalesResult"/> representing the retrieved sales.</returns>
-	public async Task<IEnumerable<ListSalesResult>> Handle(ListSalesCommand command, CancellationToken cancellationToken)
+	public async Task<PaginatedList<ListSalesResult>> Handle(ListSalesCommand command, CancellationToken cancellationToken)
 	{
-		var result = await _saleRepository.GetListAsync(cancellationToken);
-		if (result == null)
-			throw new KeyNotFoundException($"Sale with  not found");
+		var queryable = _saleRepository.GetListQueryableSales();
+		var paginatedSales = await PaginatedList<Sale>.CreateAsync(queryable, command.PageNumber, command.PageSize);
+		var resultList = _mapper.Map<List<ListSalesResult>>(paginatedSales);
+		var paginatedResult = new PaginatedList<ListSalesResult>(
+			resultList,
+			paginatedSales.TotalCount,
+			paginatedSales.CurrentPage,
+			paginatedSales.PageSize
+		);
 
-		return _mapper.Map<IEnumerable<ListSalesResult>>(result);
+		return paginatedResult;
 	}
 }
