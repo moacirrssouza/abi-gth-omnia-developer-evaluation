@@ -20,5 +20,9 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
 		builder.Property(s => s.BranchId).IsRequired().HasColumnType("uuid");
 		builder.Property(s => s.TotalAmount).HasColumnType("decimal(18,2)");
 		builder.Property(s => s.IsCancelled).IsRequired();
+		
+		builder.HasMany(s => s.SaleItems)
+			.WithOne(si => si.Sale)
+			.HasForeignKey(si => si.SaleId);
 	}
 }
