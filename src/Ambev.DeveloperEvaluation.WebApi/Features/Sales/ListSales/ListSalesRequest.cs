@@ -1,12 +1,9 @@
-﻿using MediatR;
-
-namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+﻿namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;
 
 /// <summary>
-/// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total
-/// amount. Also tracks sale items and cancellation status.
+/// Represents a request to list sales in the system.
 /// </summary>
-public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
+public class ListSalesRequest
 {
 	/// <summary>
 	/// The sale's unique identifier.

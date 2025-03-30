@@ -1,18 +1,10 @@
-﻿using MediatR;
-
-namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+﻿namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 
 /// <summary>
-/// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total
-/// amount. Also tracks sale items and cancellation status.
+/// Represents a response to a successful sale creation request.
 /// </summary>
-public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
+public class CreateSaleResponse
 {
-	/// <summary>
-	/// The sale's unique identifier.
-	/// </summary>
-	public Guid Id { get; set; }
-
 	/// <summary>
 	/// The date and time the sale was made.
 	/// </summary>

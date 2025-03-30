@@ -1,16 +1,16 @@
-﻿using MediatR;
+﻿using System.Text.Json.Serialization;
 
-namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
 
 /// <summary>
-/// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total
-/// amount. Also tracks sale items and cancellation status.
+/// Represents a request to update a sale in the system.
 /// </summary>
-public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
+public class UpdateSaleRequest
 {
 	/// <summary>
 	/// The sale's unique identifier.
 	/// </summary>
+	[JsonIgnore]
 	public Guid Id { get; set; }
 
 	/// <summary>
@@ -36,5 +36,6 @@ public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
 	/// <summary>
 	/// Indicates whether an operation has been cancelled. Defaults to false.
 	/// </summary>
+	[JsonIgnore]
 	public bool IsCancelled { get; set; } = false;
 }

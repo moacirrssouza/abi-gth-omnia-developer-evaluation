@@ -31,7 +31,7 @@ public class ListSalesHandler : IRequestHandler<ListSalesCommand, IEnumerable<Li
 	/// <returns>A collection of <see cref="ListSalesResult"/> representing the retrieved sales.</returns>
 	public async Task<IEnumerable<ListSalesResult>> Handle(ListSalesCommand command, CancellationToken cancellationToken)
 	{
-		var result = await _saleRepository.GetAsync(cancellationToken);
+		var result = await _saleRepository.GetListAsync(cancellationToken);
 		if (result == null)
 			throw new KeyNotFoundException($"Sale with  not found");
 
