@@ -31,7 +31,12 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 		/// The total amount of the sale.
 		/// </summary>
 		public bool IsCancelled { get; set; } = false;
-
+		
+		/// <summary>
+		/// The items of the sale.
+		/// </summary>
+		public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+		
 		/// <summary>
 		/// The total amount of the sale.
 		/// </summary>
