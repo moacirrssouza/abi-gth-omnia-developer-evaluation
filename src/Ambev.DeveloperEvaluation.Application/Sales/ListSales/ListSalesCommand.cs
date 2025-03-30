@@ -1,4 +1,5 @@
-﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+﻿using Ambev.DeveloperEvaluation.Application.Common.Pagination;
+using Ambev.DeveloperEvaluation.Domain.Entities;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
@@ -7,7 +8,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 /// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total
 /// amount. Also tracks sale items and cancellation status.
 /// </summary>
-public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
+public class ListSalesCommand : IRequest<PaginatedList<ListSalesResult>>
 {
 	/// <summary>
 	/// The sale's unique identifier.
@@ -43,4 +44,14 @@ public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
 	/// The items of the sale.
 	/// </summary>
 	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+	
+	/// <summary>
+	/// Represents the current page number in a paginated list. It is initialized to 1 by default.
+	/// </summary>
+	public int PageNumber { get; set; } = 1;
+
+	/// <summary>
+	/// Specifies the number of items to display per page. Defaults to 10.
+	/// </summary>
+	public int PageSize { get; set; } = 10;
 }
