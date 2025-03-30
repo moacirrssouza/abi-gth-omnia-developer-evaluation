@@ -4,6 +4,9 @@ using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
 
+/// <summary>
+/// 
+/// </summary>
 public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleResponse>
 {
 	private readonly ISaleRepository _saleRepository;
@@ -12,9 +15,7 @@ public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleRe
 	/// Initializes a new instance of DeleteSaleHandler
 	/// </summary>
 	/// <param name="saleRepository">The sale repository</param>
-	/// <param name="validator">The validator for DeleteSaleCommand</param>
-	public DeleteSaleHandler(
-		ISaleRepository saleRepository)
+	public DeleteSaleHandler(ISaleRepository saleRepository)
 	{
 		_saleRepository = saleRepository;
 	}

@@ -8,7 +8,7 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 /// </summary>
 public class ListSalesProfile : Profile
 {
-	// <summary>
+	///<summary>
 	/// Initializes the mappings for ListSales operation
 	/// </summary>
 	public ListSalesProfile()

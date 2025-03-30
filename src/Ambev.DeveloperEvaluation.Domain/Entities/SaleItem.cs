@@ -61,6 +61,7 @@ public class SaleItem : BaseEntity
 		ProductId = productId;
 		Quantity = quantity;
 		UnitPrice = unitPrice;
+		Discount = CalculateDiscount(quantity, unitPrice);
 	}
 
 	/// <summary>
@@ -69,5 +70,20 @@ public class SaleItem : BaseEntity
 	public void Cancel()
 	{
 		IsCancelled = true;
+	}
+	
+	/// <summary>
+	/// Calculates the discount amount.
+	/// </summary>
+	/// <param name="quantity"></param>
+	/// <param name="unitPrice"></param>
+	/// <returns></returns>
+	/// <exception cref="ArgumentException"></exception>
+	private decimal CalculateDiscount(int quantity, decimal unitPrice)
+	{
+		if (quantity < 4) return 0;
+		if (quantity >= 4 && quantity < 10) return unitPrice * quantity * 0.10m;
+		if (quantity >= 10 && quantity <= 20) return unitPrice * quantity * 0.20m;
+		throw new ArgumentException("Cannot sell more than 20 identical items.");
 	}
 }

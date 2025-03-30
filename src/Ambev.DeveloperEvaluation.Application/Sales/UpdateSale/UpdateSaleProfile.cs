@@ -21,7 +21,11 @@ public class UpdateSaleProfile : Profile
 			   src.SaleDate,
 			   src.CustomerId,
 			   src.BranchId,
-			   src.IsCancelled
+			   src.IsCancelled,
+			   src.SaleItems
 		   ));
+		CreateMap<SaleItem, SaleItem>()
+			.ForMember(dest => dest.TotalItemAmount,
+				opt => opt.MapFrom(src => src.Quantity * src.UnitPrice - src.Discount));
 	}
 }

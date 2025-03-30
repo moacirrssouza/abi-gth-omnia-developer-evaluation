@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 
@@ -31,10 +32,15 @@ public class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>
 	/// <summary>
 	/// The total amount of the sale.
 	/// </summary>
-	public decimal TotalAmount { get; set; }
+	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
 
 	/// <summary>
 	/// Indicates whether an operation has been cancelled. Defaults to false.
 	/// </summary>
 	public bool IsCancelled { get; set; } = false;
+	
+	/// <summary>
+	/// The items of the sale.
+	/// </summary>
+	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

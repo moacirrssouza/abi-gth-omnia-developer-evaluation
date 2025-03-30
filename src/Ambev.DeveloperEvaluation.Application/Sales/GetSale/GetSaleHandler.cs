@@ -18,9 +18,7 @@ public class GetSaleHandler : IRequestHandler<GetSaleCommand, GetSaleResult>
 	/// </summary>
 	/// <param name="saleRepository">The sale repository</param>
 	/// <param name="mapper">The AutoMapper instance</param>
-	/// <param name="validation">The validator for GetSaleByIdCommand</param>
-	public GetSaleHandler(
-		ISaleRepository saleRepository,
+	public GetSaleHandler(ISaleRepository saleRepository,
 		IMapper mapper)
 	{
 		_saleRepository = saleRepository;
