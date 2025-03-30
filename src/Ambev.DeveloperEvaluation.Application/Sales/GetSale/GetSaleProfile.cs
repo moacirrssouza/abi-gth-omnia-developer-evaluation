@@ -14,5 +14,8 @@ public class GetSaleProfile : Profile
 	public GetSaleProfile()
 	{
 		CreateMap<Sale, GetSaleResult>();
+		CreateMap<SaleItem, SaleItem>()
+			.ForMember(dest => dest.TotalItemAmount,
+				opt => opt.MapFrom(src => src.Quantity * src.UnitPrice - src.Discount));
 	}
 }

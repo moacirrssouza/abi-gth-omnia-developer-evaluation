@@ -32,17 +32,16 @@ public class SaleRepository : ISaleRepository
 		await _context.SaveChangesAsync(cancellationToken);
 		return sale;
 	}
-
-	/// <summary>
-	/// Retrieves a sale by their unique identifier
-	/// </summary>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The sale if found, null otherwise</returns>
-	public async Task<IEnumerable<Sale>> GetListAsync(CancellationToken cancellationToken = default)
-	{
-		return await _context.Sales.ToListAsync(cancellationToken);
-	}
 	
+	/// <summary>
+	/// Retrieves a queryable collection of sales, including their associated sale items.
+	/// </summary>
+	/// <returns>Returns an IQueryable of Sale objects with included SaleItems.</returns>
+	public IQueryable<Sale> GetListQueryableSales(CancellationToken cancellationToken = default)
+	{
+		return _context.Sales.Include(si => si.SaleItems).AsQueryable();
+	}
+
 	/// <summary>
 	/// Retrieves a sale by their unique identifier
 	/// </summary>
@@ -51,7 +50,8 @@ public class SaleRepository : ISaleRepository
 	/// <returns>The sale if found, null otherwise</returns>
 	public async Task<Sale?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
 	{
-		return await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+		return await _context.Sales.Include(si => si.SaleItems)
+			.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 	}
 
 	/// <summary>
@@ -62,7 +62,9 @@ public class SaleRepository : ISaleRepository
 	/// <returns>True if the sale was deleted, false if not found</returns>
 	public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
 	{
-		var sale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+		var sale = await _context.Sales
+			.Include(s => s.SaleItems)
+			.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
 		if (sale == null)
 			return false;
@@ -80,7 +82,9 @@ public class SaleRepository : ISaleRepository
 	/// <returns>The updated sale</returns>
 	public async Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
 	{
-		var existingSale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
+		var existingSale = await _context.Sales
+			.Include(s => s.SaleItems)
+			.FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
 
 		if (existingSale == null)
 			throw new Exception("Sale not found");

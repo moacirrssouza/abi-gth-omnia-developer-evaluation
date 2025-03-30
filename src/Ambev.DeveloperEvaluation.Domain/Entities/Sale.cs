@@ -53,10 +53,11 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 		/// </summary>
 		/// <param name="customerId"></param>
 		/// <param name="branchId"></param>
-		public Sale(Guid customerId, Guid branchId)
+		public Sale(Guid customerId, Guid branchId, List<SaleItem>? saleItems = null)
 		{
 			CustomerId = customerId;
 			BranchId = branchId;
+			SaleItems = saleItems ?? new List<SaleItem>();
 			RecalculateTotal();
 		}
 
@@ -64,8 +65,9 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 		/// Adds an item to the sale.
 		/// </summary>
 		/// <param name="item"></param>
-		public void AddItem()
+		public void AddItem(SaleItem item)
 		{
+			SaleItems.Add(item);
 			RecalculateTotal();
 		}
 
@@ -76,13 +78,13 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 		{
 			IsCancelled = true;
 		}
-
+		
 		/// <summary>
 		/// Recalculates the total amount of the sale.
 		/// </summary>
 		public void RecalculateTotal()
 		{
-			TotalAmount = _totalAmount;
+			TotalAmount = (SaleItems ?? new List<SaleItem>()).Sum(item => item.TotalItemAmount);
 		}
 	}
 }

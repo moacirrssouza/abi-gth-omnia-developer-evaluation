@@ -14,7 +14,8 @@ public class UpdateSaleProfile : Profile
 			   src.SaleDate,
 			   src.CustomerId,
 			   src.BranchId,
-			   src.IsCancelled
+			   src.IsCancelled,
+			   src.SaleItems
 		   ));
 	}
 }

@@ -1,4 +1,6 @@
-﻿namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
+﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+
+namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 
 /// <summary>
 /// Represents a request to create a new sale in the system.
@@ -18,10 +20,15 @@ public class CreateSaleRequest
 	/// <summary>
 	/// The total amount of the sale.
 	/// </summary>
-	public decimal TotalAmount { get; set; }
+	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
 
 	/// <summary>
 	/// Indicates whether a process or operation has been cancelled. Defaults to false, meaning not cancelled.
 	/// </summary>
 	public bool IsCancelled { get; set; } = false;
+	
+	/// <summary>
+	/// The items of the sale.
+	/// </summary>
+	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

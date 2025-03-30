@@ -69,18 +69,25 @@ public class SalesController : ControllerBase
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
 	[HttpGet]
-	[ProducesResponseType(typeof(ApiResponseWithData<IEnumerable<ListSalesResponse>>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(PaginatedResponse<ListSalesResponse>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> GetListSales(CancellationToken cancellationToken)
+	public async Task<IActionResult> GetSales([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
 	{
-		var command = new ListSalesCommand();
-		var  results = await _mediator.Send(command, cancellationToken);
+		var command = new ListSalesCommand
+		{
+			PageNumber = pageNumber,
+			PageSize = pageSize
+		};
 
-		var response = new ApiResponseWithData<IEnumerable<ListSalesResponse>>
+		var paginatedSales = await _mediator.Send(command);
+		var response = new PaginatedResponse<ListSalesResponse>
 		{
 			Success = true,
-			Message = results.Any() ? "Sales retrieved successfully" : "No sale available",
-			Data = _mapper.Map<IEnumerable<ListSalesResponse>>(results)
+			Message = paginatedSales.TotalCount > 0 ? "Sales retrieved successfully" : "No sales available",
+			Data = _mapper.Map<IEnumerable<ListSalesResponse>>(paginatedSales),
+			CurrentPage = paginatedSales.CurrentPage,
+			TotalPages = paginatedSales.TotalPages,
+			TotalCount = paginatedSales.TotalCount
 		};
 
 		return Ok(response);

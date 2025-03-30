@@ -1,4 +1,6 @@
-﻿namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;
+﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+
+namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 
 /// <summary>
 /// Response model for GetSale operation
@@ -28,10 +30,15 @@ public class GetSaleResult
 	/// <summary>
 	/// The total amount of the sale.
 	/// </summary>
-	public decimal TotalAmount { get; set; }
+	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
 
 	/// <summary>
 	/// Indicates whether an operation has been cancelled. Defaults to false.
 	/// </summary>
 	public bool IsCancelled { get; set; } = false;
+	
+	/// <summary>
+	/// The items of the sale.
+	/// </summary>
+	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }

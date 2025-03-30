@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using System.Text.Json.Serialization;
+using Ambev.DeveloperEvaluation.Domain.Entities;
+using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 
@@ -10,6 +12,7 @@ public class UpdateSaleCommand : IRequest<UpdateSaleResult>
 	/// <summary>
 	/// The sale's unique identifier.
 	/// </summary>
+	[JsonIgnore]
 	public Guid Id { get; set; }
 
 	/// <summary>
@@ -30,12 +33,17 @@ public class UpdateSaleCommand : IRequest<UpdateSaleResult>
 	/// <summary>
 	/// The total amount of the sale.
 	/// </summary>
-	public decimal TotalAmount { get; set; }
+	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
 
 	/// <summary>
 	/// Indicates whether an operation has been cancelled. Defaults to false.
 	/// </summary>
 	public bool IsCancelled { get; set; } = false;
+	
+	/// <summary>
+	/// The items of the sale.
+	/// </summary>
+	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 
 	/// <summary>
 	/// Updates the details of a sale transaction including its status and items.
@@ -45,12 +53,14 @@ public class UpdateSaleCommand : IRequest<UpdateSaleResult>
 	/// <param name="customerId">Represents the unique identifier for the customer involved in the sale.</param>
 	/// <param name="branchId">Indicates the branch where the sale took place.</param>
 	/// <param name="isCancelled">Indicates whether the sale transaction has been cancelled.</param>
-	public UpdateSaleCommand(Guid id, DateTime saleDate, Guid customerId, Guid branchId, bool isCancelled)
+	/// <param name="saleItems">Contains the list of items included in the sale transaction.</param>
+	public UpdateSaleCommand(Guid id, DateTime saleDate, Guid customerId, Guid branchId, bool isCancelled, List<SaleItem> saleItems)
 	{
 		Id = id;
 		SaleDate = saleDate;
 		CustomerId = customerId;
 		BranchId = branchId;
 		IsCancelled = isCancelled;
+		SaleItems = saleItems;
 	}
 }
