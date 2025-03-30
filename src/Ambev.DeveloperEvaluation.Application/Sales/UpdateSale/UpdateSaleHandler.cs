@@ -46,6 +46,13 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 		existingSale.CustomerId = command.CustomerId;
 		existingSale.BranchId = command.BranchId;
 		existingSale.IsCancelled = command.IsCancelled;
+		
+		if (command.SaleItems != null && command.SaleItems.Any())
+		{
+			existingSale.SaleItems = command.SaleItems;
+		}
+
+		existingSale.RecalculateTotal();
 
 		var updatedSale = await _saleRepository.UpdateAsync(existingSale, cancellationToken);
 		var result = _mapper.Map<UpdateSaleResult>(updatedSale);
