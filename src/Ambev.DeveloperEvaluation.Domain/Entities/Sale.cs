@@ -45,9 +45,11 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 			get => _totalAmount;
 			private set => _totalAmount = value;
 		}
-
-		private Sale() { }
-
+		/// <summary>
+		/// Initializes a new instance
+		/// </summary>
+		public Sale(){}
+		
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Sale"/> class.
 		/// </summary>
