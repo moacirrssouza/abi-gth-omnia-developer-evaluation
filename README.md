@@ -1,7 +1,3 @@
-<a href="https://app.aikido.dev/audit-report/external/IMQ1OonvClmSAXC0xooBTD2P/request" target="_blank">
-    <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security Audit Report" height="40" />    
-</a>
-
 # Ambev Challenge - Shopping Cart Management API
 
 A development test for evaluation in a selection process.
