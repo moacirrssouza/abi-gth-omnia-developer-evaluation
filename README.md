@@ -1,5 +1,3 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/4ua0x7oxsqqfx6kq?svg=true)](https://ci.appveyor.com/project/Britz/abi-gth-omnia-developer-evaluation)
-
 <a href="https://app.aikido.dev/audit-report/external/IMQ1OonvClmSAXC0xooBTD2P/request" target="_blank">
     <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security Audit Report" height="40" />    
 </a>
