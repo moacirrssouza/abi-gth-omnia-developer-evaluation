@@ -1,4 +1,16 @@
-# Developer Evaluation Project
+[![Build status](https://ci.appveyor.com/api/projects/status/4ua0x7oxsqqfx6kq?svg=true)](https://ci.appveyor.com/project/Britz/abi-gth-omnia-developer-evaluation)
+
+<a href="https://app.aikido.dev/audit-report/external/IMQ1OonvClmSAXC0xooBTD2P/request" target="_blank">
+    <img src="https://app.aikido.dev/assets/badges/full-light-theme.svg" alt="Aikido Security Audit Report" height="40" />    
+</a>
+
+# Ambev Challenge - Shopping Cart Management API
+
+A development test for evaluation in a selection process.
+Observing skills in software development, code organization, best practices, and technical problem-solving.
+
+## Getting Started
+Instructions on how to start the project see at [Getting Started](/.docs/getting-started.md)
 
 `READ CAREFULLY`
 
@@ -58,29 +70,30 @@ These business rules define quantity-based discounting tiers and limitations:
 ## Overview
 This section provides a high-level overview of the project and the various skills and competencies it aims to assess for developer candidates. 
 
-See [Overview](/.doc/overview.md)
+See [Overview](/.docs/overview.md)
+
+## Commit Message Convention
+This section provides using [Karma](https://karma-runner.github.io/6.4/dev/git-commit-msg.html) commit message convention.
 
 ## Tech Stack
 This section lists the key technologies used in the project, including the backend, testing, frontend, and database components. 
 
-See [Tech Stack](/.doc/tech-stack.md)
+See [Tech Stack](/.docs/tech-stack.md)
 
 ## Frameworks
 This section outlines the frameworks and libraries that are leveraged in the project to enhance development productivity and maintainability. 
 
-See [Frameworks](/.doc/frameworks.md)
+See [Frameworks](/.docs/frameworks.md)
 
-<!-- 
 ## API Structure
 This section includes links to the detailed documentation for the different API resources:
-- [API General](./docs/general-api.md)
-- [Products API](/.doc/products-api.md)
-- [Carts API](/.doc/carts-api.md)
-- [Users API](/.doc/users-api.md)
-- [Auth API](/.doc/auth-api.md)
--->
+- [API General](/.docs/general-api.md)
+- [Products API](/.docs/products-api.md)
+- [Carts API](/.docs/carts-api.md)
+- [Users API](/.docs/users-api.md)
+- [Auth API](/.docs/auth-api.md)
 
 ## Project Structure
 This section describes the overall structure and organization of the project files and directories. 
 
-See [Project Structure](/.doc/project-structure.md)
+See [Project Structure](/.docs/project-structure.md)
