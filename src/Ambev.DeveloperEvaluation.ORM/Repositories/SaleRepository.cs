@@ -39,7 +39,7 @@ public class SaleRepository : ISaleRepository
 	/// <returns>Returns an IQueryable of Sale objects with included SaleItems.</returns>
 	public IQueryable<Sale> GetListQueryableSales(CancellationToken cancellationToken = default)
 	{
-		return _context.Sales.Include(si => si.SaleItems).AsQueryable();
+		return _context.Sales.Include(si => si.SaleItems).OrderByDescending(s => s.SaleDate).AsQueryable();
 	}
 
 	/// <summary>
@@ -92,5 +92,31 @@ public class SaleRepository : ISaleRepository
 		_context.Update(existingSale);
 		await _context.SaveChangesAsync(cancellationToken);
 		return existingSale;
+	}
+	
+	/// <summary>
+	/// Cancels a sale identified by a unique identifier and updates the database accordingly.
+	/// </summary>
+	/// <param name="saleId">The unique identifier for the sale that needs to be cancelled.</param>
+	/// <param name="cancellationToken">Used to signal the cancellation of the operation if needed.</param>
+	/// <returns>Returns true if the sale was successfully cancelled, otherwise false.</returns>
+	public async Task<bool> CancelSaleAsync(Guid saleId, CancellationToken cancellationToken)
+	{
+		var sale = await _context.Sales
+			.Include(s => s.SaleItems)
+			.FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken);
+
+		if (sale == null)
+			return false;
+
+		sale.IsCancelled = true;
+		foreach (var item in sale.SaleItems)
+		{
+			item.IsCancelled = true;
+		}
+
+		_context.Sales.Update(sale);
+		await _context.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

@@ -1,8 +1,10 @@
-﻿using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+﻿using Ambev.DeveloperEvaluation.Application.Sales.CancelSale;
+using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
+using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.DeleteSale;
@@ -24,7 +26,6 @@ public class SalesController : ControllerBase
 {
 	private readonly IMediator _mediator;
 	private readonly IMapper _mapper;
-
 	/// <summary>
 	/// Initializes a new instance of SalesController
 	/// </summary>
@@ -51,7 +52,6 @@ public class SalesController : ControllerBase
 
 		if (!validationResult.IsValid)
 			return BadRequest(validationResult.Errors);
-
 		var command = _mapper.Map<CreateSaleCommand>(request);
 		var response = await _mediator.Send(command, cancellationToken);
 
@@ -67,11 +67,14 @@ public class SalesController : ControllerBase
 	/// Retrieves a list of sale
 	/// </summary>
 	/// <param name="cancellationToken"></param>
+	/// <param name="pageSize"></param>
+	/// <param name="pageNumber"></param>
 	/// <returns></returns>
 	[HttpGet]
 	[ProducesResponseType(typeof(PaginatedResponse<ListSalesResponse>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> GetSales([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+	public async Task<IActionResult> GetSales(CancellationToken cancellationToken,
+		[FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
 	{
 		var command = new ListSalesCommand
 		{
@@ -79,7 +82,7 @@ public class SalesController : ControllerBase
 			PageSize = pageSize
 		};
 
-		var paginatedSales = await _mediator.Send(command);
+		var paginatedSales = await _mediator.Send(command, cancellationToken);
 		var response = new PaginatedResponse<ListSalesResponse>
 		{
 			Success = true,
@@ -179,5 +182,27 @@ public class SalesController : ControllerBase
 			Success = true,
 			Message = "Sale updated successfully"
 		});
+	}
+	
+	/// <summary>
+	/// Cancels a sale by its ID.
+	/// </summary>
+	/// <param name="id">The ID of the sale.</param>
+	/// <param name="cancellationToken">Cancellation token.</param>
+	/// <returns>Response indicating the success of the cancellation.</returns>
+
+	[HttpPost("{id}/cancel")]
+	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> CancelSale(Guid id, CancellationToken cancellationToken)
+	{
+		var command = new CancelSaleCommand { SaleId = id };
+		var result = await _mediator.Send(command, cancellationToken);
+
+		if (!result.Success)
+			return NotFound(result);
+
+		return Ok(result);
 	}
 }

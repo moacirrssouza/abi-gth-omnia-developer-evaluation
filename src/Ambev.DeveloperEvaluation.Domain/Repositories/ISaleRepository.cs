@@ -45,4 +45,13 @@ public interface ISaleRepository
 	/// <param name="cancellationToken">Cancellation token.</param>
 	/// <returns>The updated sale if successful, or null if the sale was not found.</returns>
 	Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default);
+	
+	/// <summary>
+	/// Cancels a sale asynchronously based on a unique identifier. It returns a boolean indicating the success of the
+	/// cancellation.
+	/// </summary>
+	/// <param name="saleId">The unique identifier for the sale that needs to be canceled.</param>
+	/// <param name="cancellationToken">Used to signal the cancellation of the operation if needed.</param>
+	/// <returns>A boolean value that indicates whether the cancellation was successful.</returns>
+	Task<bool> CancelSaleAsync(Guid saleId, CancellationToken cancellationToken);
 }

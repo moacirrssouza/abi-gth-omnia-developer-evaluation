@@ -9,4 +9,9 @@ public class CreateSaleResult
 	/// Gets or sets the unique identifier of the newly created sale.
 	/// </summary>
 	public Guid Id { get; set; }
+	
+	/// <summary>
+	/// The total amount of the sale.
+	/// </summary>
+	public bool IsCancelled { get; set; } = false;
 }
