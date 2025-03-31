@@ -76,7 +76,7 @@ namespace Ambev.DeveloperEvaluation.Domain.Entities
 		/// </summary>
 		public void Cancel()
 		{
-			IsCancelled = true;
+			IsCancelled = false;
 		}
 		
 		/// <summary>

@@ -1,4 +1,6 @@
-﻿using Ambev.DeveloperEvaluation.Domain.Repositories;
+﻿using Ambev.DeveloperEvaluation.Application.Common.Events;
+using Ambev.DeveloperEvaluation.Domain.Events;
+using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
 using FluentValidation;
 using MediatR;
@@ -12,6 +14,7 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 {
 	private readonly ISaleRepository _saleRepository;
 	private readonly IMapper _mapper;
+	private readonly IEventPublisher _eventPublisher;
 
 	/// <summary>
 	/// Initializes a new instance of UpdateHandler
@@ -19,10 +22,11 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 	/// <param name="saleRepository">The sale repository</param>
 	/// <param name="mapper">The AutoMapper instance</param>
 	/// <param name="validator">The validator for UpdateSaleCommand</param>
-	public UpdateSaleHandler(ISaleRepository saleRepository, IMapper mapper)
+	public UpdateSaleHandler(ISaleRepository saleRepository, IMapper mapper, IEventPublisher eventPublisher)
 	{
 		_saleRepository = saleRepository;
 		_mapper = mapper;
+		_eventPublisher = eventPublisher;
 	}
 
 	/// <summary>
@@ -46,7 +50,7 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 		existingSale.CustomerId = command.CustomerId;
 		existingSale.BranchId = command.BranchId;
 		existingSale.IsCancelled = command.IsCancelled;
-		
+
 		if (command.SaleItems != null && command.SaleItems.Any())
 		{
 			existingSale.SaleItems = command.SaleItems;
@@ -55,6 +59,8 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 		existingSale.RecalculateTotal();
 
 		var updatedSale = await _saleRepository.UpdateAsync(existingSale, cancellationToken);
+		var saleModifiedEvent = new SaleModifiedEvent(existingSale.Id);
+		await _eventPublisher.PublishAsync(saleModifiedEvent);
 		var result = _mapper.Map<UpdateSaleResult>(updatedSale);
 		return result;
 	}

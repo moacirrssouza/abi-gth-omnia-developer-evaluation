@@ -17,12 +17,21 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .Filter.ByIncludingOnly(logEvent =>
+            {
+                return logEvent.Properties.ContainsKey("saleEvent"); 
+            })
+            .WriteTo.Console()
+            .WriteTo.File("c:/Logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+            .CreateLogger();
+        
         try
         {
-            Log.Information("Starting web application");
-
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-            builder.AddDefaultLogging();
+
+            builder.Host.UseSerilog();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();

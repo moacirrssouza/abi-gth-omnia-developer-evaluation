@@ -38,7 +38,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales
 		public bool IsCancelled { get; set; } = false;
 		
 		/// <summary>
-		/// The items of the saleItema.
+		/// The items of the saleItems.
 		/// </summary>
 		public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 	}
