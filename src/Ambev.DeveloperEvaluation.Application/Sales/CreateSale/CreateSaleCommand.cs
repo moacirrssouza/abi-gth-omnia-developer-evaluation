@@ -22,7 +22,10 @@ public class CreateSaleCommand : IRequest<CreateSaleResult>
     /// <summary>
     /// The total amount of the sale.
     /// </summary>
-    public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+    public decimal TotalAmount
+    {
+        get => SaleItems.Sum(i => i.TotalItemAmount);
+    }
 
     /// <summary>
     /// The total amount of the sale.

@@ -1,0 +1,1209 @@
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequestValidator.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using FluentValidation;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;\r\n\r\n/// <summary>\r\n/// Validator for CreateSaleRequest that defines validation rules for user creation.\r\n/// </summary>\r\npublic class CreateSaleRequestValidator : AbstractValidator<CreateSaleRequest>\r\n{\r\n\t/// <summary>\r\n\t/// Validator for the UpdateSaleCommand.\r\n\t/// </summary>\r\n\t/// <remarks>\r\n\t/// Validation rules include:\r\n\t/// - CustomerId: Must not be empty.\r\n\t/// - BranchId: Must not be empty.\r\n\t/// - SaleItems: Must contain at least one sale item.\r\n\t/// - TotalAmount: Must be greater than or equal to 0.\r\n\t/// </remarks>\r\n\tpublic CreateSaleRequestValidator()\r\n\t{\r\n\t\tRuleFor(sale => sale.CustomerId)\r\n\t\t\t.NotEmpty().WithMessage(\"CustomerId must not be empty.\");\r\n\t\tRuleFor(sale => sale.BranchId)\r\n\t\t\t.NotEmpty().WithMessage(\"BranchId must not be empty.\");\r\n\t\tRuleFor(sale => sale.TotalAmount)\r\n\t\t\t.GreaterThanOrEqualTo(0)\r\n\t\t\t.WithMessage(\"TotalAmount must be greater than or equal to 0.\");\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequestValidator.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequestValidator.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequestValidator.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequestValidator.cs	(date 1743360877148)
+@@ -16,6 +16,7 @@
+ 	/// - BranchId: Must not be empty.
+ 	/// - SaleItems: Must contain at least one sale item.
+ 	/// - TotalAmount: Must be greater than or equal to 0.
++	/// - Each SaleItem is validated using the SaleItemValidator.
+ 	/// </remarks>
+ 	public CreateSaleRequestValidator()
+ 	{
+@@ -23,8 +24,12 @@
+ 			.NotEmpty().WithMessage("CustomerId must not be empty.");
+ 		RuleFor(sale => sale.BranchId)
+ 			.NotEmpty().WithMessage("BranchId must not be empty.");
++		RuleFor(sale => sale.SaleItems)
++			.NotEmpty().WithMessage("Sale must have at least one sale item.");
+ 		RuleFor(sale => sale.TotalAmount)
+ 			.GreaterThanOrEqualTo(0)
+ 			.WithMessage("TotalAmount must be greater than or equal to 0.");
++		RuleForEach(sale => sale.SaleItems)
++			.SetValidator(new SaleItemValidator());
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleProfile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Entities;\r\nusing AutoMapper;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;\r\n\r\n/// <summary>\r\n/// Profile for mapping between Sale entity and GetSaleResponse\r\n/// </summary>\r\npublic class GetSaleProfile : Profile\r\n{\r\n\t/// <summary>\r\n\t/// Initializes the mappings for GetSale operation\r\n\t/// </summary>\r\n\tpublic GetSaleProfile()\r\n\t{\r\n\t\tCreateMap<Sale, GetSaleResult>();\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleProfile.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleProfile.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleProfile.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleProfile.cs	(date 1743358117098)
+@@ -14,5 +14,8 @@
+ 	public GetSaleProfile()
+ 	{
+ 		CreateMap<Sale, GetSaleResult>();
++		CreateMap<SaleItem, SaleItem>()
++			.ForMember(dest => dest.TotalItemAmount,
++				opt => opt.MapFrom(src => src.Quantity * src.UnitPrice - src.Discount));
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleResult.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;\r\n\r\n/// <summary>\r\n/// Response model for GetSale operation\r\n/// </summary>\r\npublic class GetSaleResult\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleResult.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleResult.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleResult.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleResult.cs	(date 1743358204826)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;
+ 
+ /// <summary>
+@@ -28,10 +30,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesProfile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Entities;\r\nusing AutoMapper;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;\r\n\r\n/// <summary>\r\n/// Profile for mapping between Sale entity and ListSalesResponse\r\n/// </summary>\r\npublic class ListSalesProfile : Profile\r\n{\r\n\t// <summary>\r\n\t/// Initializes the mappings for ListSales operation\r\n\t/// </summary>\r\n\tpublic ListSalesProfile()\r\n\t{\r\n\t\tCreateMap<ListSalesCommand, Sale>();\r\n\t\tCreateMap<Sale, ListSalesResult>();\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesProfile.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesProfile.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesProfile.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesProfile.cs	(date 1743358570122)
+@@ -8,7 +8,7 @@
+ /// </summary>
+ public class ListSalesProfile : Profile
+ {
+-	// <summary>
++	///<summary>
+ 	/// Initializes the mappings for ListSales operation
+ 	/// </summary>
+ 	public ListSalesProfile()
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleValidator.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using FluentValidation;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;\r\n\r\npublic class UpdateSaleRequestValidator : AbstractValidator<UpdateSaleRequest>\r\n{\r\n\t/// <summary>\r\n\t/// Validator for the UpdateSaleCommand.\r\n\t/// </summary>\r\n\t/// <remarks>\r\n\t/// Validation rules include:\r\n\t/// - CustomerId: Must not be empty.\r\n\t/// - BranchId: Must not be empty.\r\n\t/// - SaleItems: Must contain at least one sale item.\r\n\t/// - TotalAmount: Must be greater than or equal to 0.\r\n\t/// </remarks>\r\n\tpublic UpdateSaleRequestValidator()\r\n\t{\r\n\t\tRuleFor(sale => sale.CustomerId)\r\n\t\t\t   .NotEmpty().WithMessage(\"CustomerId must not be empty.\");\r\n\t\tRuleFor(sale => sale.BranchId)\r\n\t\t\t.NotEmpty().WithMessage(\"BranchId must not be empty.\");\r\n\t\tRuleFor(sale => sale.TotalAmount)\r\n\t\t\t.GreaterThanOrEqualTo(0)\r\n\t\t\t.WithMessage(\"TotalAmount must be greater than or equal to 0.\");\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleValidator.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleValidator.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleValidator.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleValidator.cs	(date 1743361483953)
+@@ -13,15 +13,20 @@
+ 	/// - BranchId: Must not be empty.
+ 	/// - SaleItems: Must contain at least one sale item.
+ 	/// - TotalAmount: Must be greater than or equal to 0.
++	/// - Each SaleItem is validated using the SaleItemValidator.
+ 	/// </remarks>
+ 	public UpdateSaleRequestValidator()
+ 	{
+ 		RuleFor(sale => sale.CustomerId)
+-			   .NotEmpty().WithMessage("CustomerId must not be empty.");
++			.NotEmpty().WithMessage("CustomerId must not be empty.");
+ 		RuleFor(sale => sale.BranchId)
+ 			.NotEmpty().WithMessage("BranchId must not be empty.");
++		RuleFor(sale => sale.SaleItems)
++			.NotEmpty().WithMessage("Sale must have at least one sale item.");
+ 		RuleFor(sale => sale.TotalAmount)
+ 			.GreaterThanOrEqualTo(0)
+ 			.WithMessage("TotalAmount must be greater than or equal to 0.");
++		RuleForEach(sale => sale.SaleItems)
++			.SetValidator(new SaleItemValidator());
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesRequest.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;\r\n\r\n/// <summary>\r\n/// Represents a request to list sales in the system.\r\n/// </summary>\r\npublic class ListSalesRequest\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesRequest.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesRequest.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesRequest.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesRequest.cs	(date 1743361211841)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;
+ 
+ /// <summary>
+@@ -28,10 +30,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the saleItems.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleCommand.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n/// Represents a sale.\r\n/// </summary>\r\npublic class UpdateSaleCommand : IRequest<UpdateSaleResult>\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n\r\n\t/// <summary>\r\n\t/// Updates the details of a sale transaction including its status and items.\r\n\t/// </summary>\r\n\t/// <param name=\"id\">Identifies the specific sale transaction to be updated.</param>\r\n\t/// <param name=\"saleDate\">Specifies the date when the sale occurred.</param>\r\n\t/// <param name=\"customerId\">Represents the unique identifier for the customer involved in the sale.</param>\r\n\t/// <param name=\"branchId\">Indicates the branch where the sale took place.</param>\r\n\t/// <param name=\"isCancelled\">Indicates whether the sale transaction has been cancelled.</param>\r\n\tpublic UpdateSaleCommand(Guid id, DateTime saleDate, Guid customerId, Guid branchId, bool isCancelled)\r\n\t{\r\n\t\tId = id;\r\n\t\tSaleDate = saleDate;\r\n\t\tCustomerId = customerId;\r\n\t\tBranchId = branchId;\r\n\t\tIsCancelled = isCancelled;\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleCommand.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleCommand.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleCommand.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleCommand.cs	(date 1743359040189)
+@@ -1,3 +1,5 @@
++using System.Text.Json.Serialization;
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ using MediatR;
+ 
+ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
+@@ -10,6 +12,7 @@
+ 	/// <summary>
+ 	/// The sale's unique identifier.
+ 	/// </summary>
++	[JsonIgnore]
+ 	public Guid Id { get; set; }
+ 
+ 	/// <summary>
+@@ -30,12 +33,17 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ 
+ 	/// <summary>
+ 	/// Updates the details of a sale transaction including its status and items.
+@@ -45,12 +53,14 @@
+ 	/// <param name="customerId">Represents the unique identifier for the customer involved in the sale.</param>
+ 	/// <param name="branchId">Indicates the branch where the sale took place.</param>
+ 	/// <param name="isCancelled">Indicates whether the sale transaction has been cancelled.</param>
+-	public UpdateSaleCommand(Guid id, DateTime saleDate, Guid customerId, Guid branchId, bool isCancelled)
++	/// <param name="saleItems">Contains the list of items included in the sale transaction.</param>
++	public UpdateSaleCommand(Guid id, DateTime saleDate, Guid customerId, Guid branchId, bool isCancelled, List<SaleItem> saleItems)
+ 	{
+ 		Id = id;
+ 		SaleDate = saleDate;
+ 		CustomerId = customerId;
+ 		BranchId = branchId;
+ 		IsCancelled = isCancelled;
++		SaleItems = saleItems;
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleProfile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Entities;\r\nusing AutoMapper;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n/// Profile for mapping between Sale entity and UpdateSaleResponse\r\n/// </summary>\r\npublic class UpdateSaleProfile : Profile\r\n{\r\n\t/// <summary>\r\n\t/// Initializes the mappings for UpdateSale operation\r\n\t/// </summary>\r\n\tpublic UpdateSaleProfile()\r\n\t{\r\n\t\tCreateMap<UpdateSaleCommand, Sale>();\r\n\t\tCreateMap<Sale, UpdateSaleResult>();\r\n\t\tCreateMap<Sale, UpdateSaleCommand>()\r\n\t\t   .ConstructUsing(src => new UpdateSaleCommand(\r\n\t\t\t   src.Id,\r\n\t\t\t   src.SaleDate,\r\n\t\t\t   src.CustomerId,\r\n\t\t\t   src.BranchId,\r\n\t\t\t   src.IsCancelled\r\n\t\t   ));\r\n\t}\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleProfile.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleProfile.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleProfile.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleProfile.cs	(date 1743359212631)
+@@ -21,7 +21,11 @@
+ 			   src.SaleDate,
+ 			   src.CustomerId,
+ 			   src.BranchId,
+-			   src.IsCancelled
++			   src.IsCancelled,
++			   src.SaleItems
+ 		   ));
++		CreateMap<SaleItem, SaleItem>()
++			.ForMember(dest => dest.TotalItemAmount,
++				opt => opt.MapFrom(src => src.Quantity * src.UnitPrice - src.Discount));
+ 	}
+-}
++}
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.ORM/Repositories/SaleRepository.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Entities;\r\nusing Ambev.DeveloperEvaluation.Domain.Repositories;\r\nusing Microsoft.EntityFrameworkCore;\r\n\r\nnamespace Ambev.DeveloperEvaluation.ORM.Repositories;\r\n\r\n/// <summary>\r\n/// Implementation of IUserRepository using Entity Framework Core\r\n/// </summary>\r\npublic class SaleRepository : ISaleRepository\r\n{\r\n\tprivate readonly DefaultContext _context;\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of SaleRepository\r\n\t/// </summary>\r\n\t/// <param name=\"context\">The database context</param>\r\n\tpublic SaleRepository(DefaultContext context)\r\n\t{\r\n\t\t_context = context;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Creates a new sale in the database\r\n\t/// </summary>\r\n\t/// <param name=\"sale\">The sale to create</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The created user</returns>\r\n\tpublic async Task<Sale> CreateAsync(Sale sale, CancellationToken cancellationToken = default)\r\n\t{\r\n\t\tawait _context.Sales.AddAsync(sale, cancellationToken);\r\n\t\tawait _context.SaveChangesAsync(cancellationToken);\r\n\t\treturn sale;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Retrieves a sale by their unique identifier\r\n\t/// </summary>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The sale if found, null otherwise</returns>\r\n\tpublic async Task<IEnumerable<Sale>> GetAsync(CancellationToken cancellationToken = default)\r\n\t{\r\n\t\treturn await _context.Sales.ToListAsync(cancellationToken);\r\n\t}\r\n\t\r\n\t/// <summary>\r\n\t/// Retrieves a sale by their unique identifier\r\n\t/// </summary>\r\n\t/// <param name=\"id\">The unique identifier of the sale</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The sale if found, null otherwise</returns>\r\n\tpublic async Task<Sale?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)\r\n\t{\r\n\t\treturn await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Deletes a sale from the database\r\n\t/// </summary>\r\n\t/// <param name=\"id\">The unique identifier of the sale to delete</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>True if the sale was deleted, false if not found</returns>\r\n\tpublic async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)\r\n\t{\r\n\t\tvar sale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);\r\n\r\n\t\tif (sale == null)\r\n\t\t\treturn false;\r\n\r\n\t\t_context.Sales.Remove(sale);\r\n\t\tawait _context.SaveChangesAsync(cancellationToken);\r\n\t\treturn true;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Updates an existing sale in the database\r\n\t/// </summary>\r\n\t/// <param name=\"sale\">The sale to update</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The updated sale</returns>\r\n\tpublic async Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default)\r\n\t{\r\n\t\tvar existingSale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);\r\n\r\n\t\tif (existingSale == null)\r\n\t\t\tthrow new Exception(\"Sale not found\");\r\n\r\n\t\t_context.Update(existingSale);\r\n\t\tawait _context.SaveChangesAsync(cancellationToken);\r\n\t\treturn existingSale;\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.ORM/Repositories/SaleRepository.cs b/src/Ambev.DeveloperEvaluation.ORM/Repositories/SaleRepository.cs
+--- a/src/Ambev.DeveloperEvaluation.ORM/Repositories/SaleRepository.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.ORM/Repositories/SaleRepository.cs	(date 1743362102848)
+@@ -40,9 +40,9 @@
+ 	/// <returns>The sale if found, null otherwise</returns>
+ 	public async Task<IEnumerable<Sale>> GetAsync(CancellationToken cancellationToken = default)
+ 	{
+-		return await _context.Sales.ToListAsync(cancellationToken);
++		return await _context.Sales.Include(si => si.SaleItems).ToListAsync(cancellationToken);
+ 	}
+-	
++
+ 	/// <summary>
+ 	/// Retrieves a sale by their unique identifier
+ 	/// </summary>
+@@ -51,7 +51,8 @@
+ 	/// <returns>The sale if found, null otherwise</returns>
+ 	public async Task<Sale?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+ 	{
+-		return await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
++		return await _context.Sales.Include(si => si.SaleItems)
++			.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+ 	}
+ 
+ 	/// <summary>
+@@ -62,7 +63,9 @@
+ 	/// <returns>True if the sale was deleted, false if not found</returns>
+ 	public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+ 	{
+-		var sale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
++		var sale = await _context.Sales
++			.Include(s => s.SaleItems)
++			.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+ 
+ 		if (sale == null)
+ 			return false;
+@@ -80,7 +83,9 @@
+ 	/// <returns>The updated sale</returns>
+ 	public async Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
+ 	{
+-		var existingSale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
++		var existingSale = await _context.Sales
++			.Include(s => s.SaleItems)
++			.FirstOrDefaultAsync(s => s.Id == sale.Id, cancellationToken);
+ 
+ 		if (existingSale == null)
+ 			throw new Exception("Sale not found");
+Index: .idea/.idea.Ambev.DeveloperEvaluation/.idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoGeneratedRunConfigurationManager\">\r\n    <projectFile kind=\"DockerCompose\">docker-compose.dcproj</projectFile>\r\n    <projectFile kind=\"Docker\">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>\r\n    <projectFile profileName=\"IIS Express\">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>\r\n    <projectFile profileName=\"http\">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>\r\n    <projectFile profileName=\"https\">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"8646b322-c4c1-422c-b43f-eb1dd4a2523b\" name=\"Changes\" comment=\"\" />\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\"><![CDATA[{\r\n  \"lastFilter\": {\r\n    \"state\": \"OPEN\",\r\n    \"assignee\": \"moacirrssouza\"\r\n  }\r\n}]]></component>\r\n  <component name=\"GithubPullRequestsUISettings\"><![CDATA[{\r\n  \"selectedUrlAndAccountId\": {\r\n    \"url\": \"https://github.com/moacirrssouza/abi-gth-omnia-developer-evaluation.git\",\r\n    \"accountId\": \"74e43d7d-7e5d-401f-b44d-707cb7915e38\"\r\n  }\r\n}]]></component>\r\n  <component name=\"ProjectColorInfo\"><![CDATA[{\r\n  \"customColor\": \"\",\r\n  \"associatedIndex\": 2\r\n}]]></component>\r\n  <component name=\"ProjectId\" id=\"2uwy9DcP29QiJyHQi2ik1QhiDEX\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: https.executor\": \"Debug\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"RunOnceActivity.git.unshallow\": \"true\",\r\n    \"git-widget-placeholder\": \"development\",\r\n    \"ignore.virus.scanning.warn.message\": \"true\",\r\n    \"nodejs_package_manager_path\": \"npm\",\r\n    \"vue.rearranger.settings.migration\": \"true\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RunManager\" selected=\".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: https\">\r\n    <configuration name=\"Ambev.DeveloperEvaluation.WebApi: IIS Express\" type=\"LaunchSettings\" factoryName=\".NET Launch Settings Profile\">\r\n      <option name=\"LAUNCH_PROFILE_PROJECT_FILE_PATH\" value=\"$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj\" />\r\n      <option name=\"LAUNCH_PROFILE_TFM\" value=\"net8.0\" />\r\n      <option name=\"LAUNCH_PROFILE_NAME\" value=\"IIS Express\" />\r\n      <option name=\"USE_EXTERNAL_CONSOLE\" value=\"0\" />\r\n      <option name=\"USE_MONO\" value=\"0\" />\r\n      <option name=\"RUNTIME_ARGUMENTS\" value=\"\" />\r\n      <option name=\"GENERATE_APPLICATIONHOST_CONFIG\" value=\"1\" />\r\n      <option name=\"SHOW_IIS_EXPRESS_OUTPUT\" value=\"0\" />\r\n      <option name=\"SEND_DEBUG_REQUEST\" value=\"1\" />\r\n      <option name=\"ADDITIONAL_IIS_EXPRESS_ARGUMENTS\" value=\"\" />\r\n      <method v=\"2\">\r\n        <option name=\"Build\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"Ambev.DeveloperEvaluation.WebApi: http\" type=\"LaunchSettings\" factoryName=\".NET Launch Settings Profile\">\r\n      <option name=\"LAUNCH_PROFILE_PROJECT_FILE_PATH\" value=\"$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj\" />\r\n      <option name=\"LAUNCH_PROFILE_TFM\" value=\"net8.0\" />\r\n      <option name=\"LAUNCH_PROFILE_NAME\" value=\"http\" />\r\n      <option name=\"USE_EXTERNAL_CONSOLE\" value=\"0\" />\r\n      <option name=\"USE_MONO\" value=\"0\" />\r\n      <option name=\"RUNTIME_ARGUMENTS\" value=\"\" />\r\n      <option name=\"GENERATE_APPLICATIONHOST_CONFIG\" value=\"1\" />\r\n      <option name=\"SHOW_IIS_EXPRESS_OUTPUT\" value=\"0\" />\r\n      <option name=\"SEND_DEBUG_REQUEST\" value=\"1\" />\r\n      <option name=\"ADDITIONAL_IIS_EXPRESS_ARGUMENTS\" value=\"\" />\r\n      <method v=\"2\">\r\n        <option name=\"Build\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"Ambev.DeveloperEvaluation.WebApi: https\" type=\"LaunchSettings\" factoryName=\".NET Launch Settings Profile\">\r\n      <option name=\"LAUNCH_PROFILE_PROJECT_FILE_PATH\" value=\"$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj\" />\r\n      <option name=\"LAUNCH_PROFILE_TFM\" value=\"net8.0\" />\r\n      <option name=\"LAUNCH_PROFILE_NAME\" value=\"https\" />\r\n      <option name=\"USE_EXTERNAL_CONSOLE\" value=\"0\" />\r\n      <option name=\"USE_MONO\" value=\"0\" />\r\n      <option name=\"RUNTIME_ARGUMENTS\" value=\"\" />\r\n      <option name=\"GENERATE_APPLICATIONHOST_CONFIG\" value=\"1\" />\r\n      <option name=\"SHOW_IIS_EXPRESS_OUTPUT\" value=\"0\" />\r\n      <option name=\"SEND_DEBUG_REQUEST\" value=\"1\" />\r\n      <option name=\"ADDITIONAL_IIS_EXPRESS_ARGUMENTS\" value=\"\" />\r\n      <method v=\"2\">\r\n        <option name=\"Build\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"Ambev.DeveloperEvaluation.WebApi/Dockerfile\" type=\"docker-deploy\" factoryName=\"dockerfile\" server-name=\"Docker\">\r\n      <deployment type=\"dockerfile\">\r\n        <settings>\r\n          <option name=\"containerName\" value=\"ambev.developerevaluation.webapi\" />\r\n          <option name=\"contextFolderPath\" value=\"C:\\Workspace\\abi-gth-omnia-developer-evaluation\" />\r\n          <option name=\"publishAllPorts\" value=\"true\" />\r\n          <option name=\"sourceFilePath\" value=\"src/Ambev.DeveloperEvaluation.WebApi/Dockerfile\" />\r\n        </settings>\r\n      </deployment>\r\n      <EXTENSION ID=\"com.jetbrains.rider.docker.debug\" isFastModeEnabled=\"true\" isSslEnabled=\"true\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"docker-deploy\" factoryName=\"docker-compose.yml\" temporary=\"true\">\r\n      <deployment type=\"docker-compose.yml\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"docker-deploy\" factoryName=\"dockerfile\" temporary=\"true\">\r\n      <deployment type=\"dockerfile\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"docker-compose.yml: Compose Deployment\" type=\"docker-deploy\" factoryName=\"docker-compose.yml\" server-name=\"Docker\">\r\n      <deployment type=\"docker-compose.yml\">\r\n        <settings>\r\n          <option name=\"secondarySourceFiles\">\r\n            <list>\r\n              <option value=\"C:\\Workspace\\abi-gth-omnia-developer-evaluation\\docker-compose.override.yml\" />\r\n            </list>\r\n          </option>\r\n          <option name=\"sourceFilePath\" value=\"docker-compose.yml\" />\r\n        </settings>\r\n      </deployment>\r\n      <EXTENSION ID=\"com.jetbrains.rider.docker.debug\" isFastModeEnabled=\"true\" isSslEnabled=\"false\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"8646b322-c4c1-422c-b43f-eb1dd4a2523b\" name=\"Changes\" comment=\"\" />\r\n      <created>1743173779414</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1743173779414</updated>\r\n      <workItem from=\"1743173785002\" duration=\"77000\" />\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"UnityProjectConfiguration\" hasMinimizedUI=\"false\" />\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <option name=\"CLEAR_INITIAL_COMMIT_MESSAGE\" value=\"true\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/.idea.Ambev.DeveloperEvaluation/.idea/workspace.xml b/.idea/.idea.Ambev.DeveloperEvaluation/.idea/workspace.xml
+--- a/.idea/.idea.Ambev.DeveloperEvaluation/.idea/workspace.xml	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/.idea/.idea.Ambev.DeveloperEvaluation/.idea/workspace.xml	(date 1743362627565)
+@@ -7,6 +7,9 @@
+     <projectFile profileName="http">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>
+     <projectFile profileName="https">src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj</projectFile>
+   </component>
++  <component name="AutoImportSettings">
++    <option name="autoReloadType" value="SELECTIVE" />
++  </component>
+   <component name="ChangeListManager">
+     <list default="true" id="8646b322-c4c1-422c-b43f-eb1dd4a2523b" name="Changes" comment="" />
+     <option name="SHOW_DIALOG" value="false" />
+@@ -14,25 +17,69 @@
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+     <option name="LAST_RESOLUTION" value="IGNORE" />
+   </component>
++  <component name="DpaMonitoringSettings">
++    <option name="firstShow" value="false" />
++  </component>
+   <component name="Git.Settings">
++    <favorite-branches>
++      <branch-storage>
++        <map>
++          <entry type="LOCAL">
++            <value>
++              <list>
++                <branch-info repo="$PROJECT_DIR$" source="development" />
++              </list>
++            </value>
++          </entry>
++        </map>
++      </branch-storage>
++    </favorite-branches>
++    <option name="RECENT_BRANCH_BY_REPOSITORY">
++      <map>
++        <entry key="$PROJECT_DIR$" value="feat/application/saleItems-in-sale" />
++      </map>
++    </option>
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
+-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+-  "lastFilter": {
+-    "state": "OPEN",
+-    "assignee": "moacirrssouza"
++  <component name="GitHubPullRequestSearchHistory">{
++  &quot;lastFilter&quot;: {
++    &quot;state&quot;: &quot;OPEN&quot;,
++    &quot;assignee&quot;: &quot;moacirrssouza&quot;
+   }
+-}]]></component>
+-  <component name="GithubPullRequestsUISettings"><![CDATA[{
+-  "selectedUrlAndAccountId": {
+-    "url": "https://github.com/moacirrssouza/abi-gth-omnia-developer-evaluation.git",
+-    "accountId": "74e43d7d-7e5d-401f-b44d-707cb7915e38"
++}</component>
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;https://github.com/moacirrssouza/abi-gth-omnia-developer-evaluation.git&quot;,
++    &quot;accountId&quot;: &quot;74e43d7d-7e5d-401f-b44d-707cb7915e38&quot;
+   }
+-}]]></component>
+-  <component name="ProjectColorInfo"><![CDATA[{
+-  "customColor": "",
+-  "associatedIndex": 2
+-}]]></component>
++}</component>
++  <component name="HighlightingSettingsPerFile">
++    <setting file="mock:///Dummy.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock:///Dummy.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="file://$PROJECT_DIR$/../../Temp/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.Application/Products/ListAllCategoriesOfProduct/ListAllCategoriesOfProductsHandler.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/bb3cc3857c2745e0b68228e0877a03a91a908/7a/26a44a95/IAuthorizationRequirement.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/294078ecfce6fdb942ecfee089f09717de7a6fcfe5efd9fdb6f4f93c0fb4813/ActionMethodExecutor.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/36f346b6c0454bc8a6afa7aed38119fe5bbffcc983298d9bfa4dbd5f49461f/Monitor.CoreCLR.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9eda537f15ea23cdfae523c19e87eb303a3ded88937ae7e55919387a43f70/ExecutionContext.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/a77b231cea33ff338c41dc7869d6c493d4dae137ff51e342173efa61d933/Task.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b86cdfe19de105ff2eab7d5d4c613fd91b9adfe4f95bd82e2d6db593e6d3ca3/TaskContinuation.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/fb367341658aaedd7de424d4c9189db33c4387e268dcc4011918569442ab12/AsyncTaskMethodBuilderT.cs" root0="FORCE_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.Application/Auth/AuthenticateUser/AuthenticateUserHandler.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Auth/AuthController.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Auth/AuthController.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Auth/AuthController.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Auth/AuthenticateUserFeature/AuthenticateUserProfile.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Features/Users/GetUser/GetUserProfile.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Middleware/ValidationExceptionMiddleware.cs" root0="SKIP_HIGHLIGHTING" />
++    <setting file="mock://C:/Workspace/abi-gth-omnia-developer-evaluation/src/Ambev.DeveloperEvaluation.WebApi/Program.cs" root0="SKIP_HIGHLIGHTING" />
++  </component>
++  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="false" />
++  <component name="ProjectColorInfo">{
++  &quot;customColor&quot;: &quot;&quot;,
++  &quot;associatedIndex&quot;: 2
++}</component>
+   <component name="ProjectId" id="2uwy9DcP29QiJyHQi2ik1QhiDEX" />
+   <component name="ProjectViewState">
+     <option name="hideEmptyMiddlePackages" value="true" />
+@@ -40,13 +87,24 @@
+   </component>
+   <component name="PropertiesComponent"><![CDATA[{
+   "keyToString": {
+-    ".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: https.executor": "Debug",
++    ".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: https.executor": "Run",
+     "RunOnceActivity.ShowReadmeOnStart": "true",
+     "RunOnceActivity.git.unshallow": "true",
+-    "git-widget-placeholder": "development",
++    "git-widget-placeholder": "feat/application/saleItems-in-sale",
+     "ignore.virus.scanning.warn.message": "true",
++    "node.js.detected.package.eslint": "true",
++    "node.js.selected.package.eslint": "(autodetect)",
++    "node.js.selected.package.tslint": "(autodetect)",
+     "nodejs_package_manager_path": "npm",
++    "settings.editor.selected.configurable": "preferences.lookFeel",
+     "vue.rearranger.settings.migration": "true"
++  },
++  "keyToStringList": {
++    "GitStage.ChangesTree.GroupingKeys": [
++      "directory",
++      "module",
++      "repository"
++    ]
+   }
+ }]]></component>
+   <component name="RunManager" selected=".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: https">
+@@ -65,7 +123,7 @@
+         <option name="Build" />
+       </method>
+     </configuration>
+-    <configuration name="Ambev.DeveloperEvaluation.WebApi: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
++    <configuration name="Ambev.DeveloperEvaluation.WebApi: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile" temporary="true">
+       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj" />
+       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
+       <option name="LAUNCH_PROFILE_NAME" value="http" />
+@@ -108,11 +166,17 @@
+       <method v="2" />
+     </configuration>
+     <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
+-      <deployment type="docker-compose.yml" />
++      <deployment type="docker-compose.yml">
++        <settings />
++      </deployment>
++      <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
+       <method v="2" />
+     </configuration>
+     <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
+-      <deployment type="dockerfile" />
++      <deployment type="dockerfile">
++        <settings />
++      </deployment>
++      <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
+       <method v="2" />
+     </configuration>
+     <configuration name="docker-compose.yml: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
+@@ -129,6 +193,14 @@
+       <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
+       <method v="2" />
+     </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue=".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: http" />
++        <item itemvalue=".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: http" />
++        <item itemvalue=".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: http" />
++        <item itemvalue=".NET Launch Settings Profile.Ambev.DeveloperEvaluation.WebApi: http" />
++      </list>
++    </recent_temporary>
+   </component>
+   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+   <component name="TaskManager">
+@@ -139,19 +211,50 @@
+       <option name="presentableId" value="Default" />
+       <updated>1743173779414</updated>
+       <workItem from="1743173785002" duration="77000" />
++      <workItem from="1743343178603" duration="12040000" />
++    </task>
++    <task id="LOCAL-00001" summary="fix: Adiciona mapeamento&#10;* fix: Cria e registra o perfil de AutoMapper para mapear SaleProfile&#10;* fix: Cria e registra o perfil de AutoMapper para mapear UserProfile">
++      <option name="closed" value="true" />
++      <created>1743280867756</created>
++      <option name="number" value="00001" />
++      <option name="presentableId" value="LOCAL-00001" />
++      <option name="project" value="LOCAL" />
++      <updated>1743280867757</updated>
++    </task>
++    <task id="LOCAL-00002" summary="feat: criar domínio de saleItem e migrações&#10;* feat: criar domínio de saleItem com validações&#10;* feat: criar migração de saleItem&#10;* feat: associar nome da saleItem ao sale no aplicativo&#10;* feat: implementa repositório de saleItem&#10;* feat: associar nome da saleItems ao sale no aplicativo">
++      <option name="closed" value="true" />
++      <created>1743357056188</created>
++      <option name="number" value="00002" />
++      <option name="presentableId" value="LOCAL-00002" />
++      <option name="project" value="LOCAL" />
++      <updated>1743357056188</updated>
+     </task>
++    <option name="localTasksCounter" value="3" />
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+     <option name="version" value="3" />
+   </component>
++  <component name="UnityCheckinConfiguration" checkUnsavedScenes="false" />
+   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+   <component name="Vcs.Log.Tabs.Properties">
+     <option name="TAB_STATES">
+       <map>
+         <entry key="MAIN">
+           <value>
+-            <State />
++            <State>
++              <option name="FILTERS">
++                <map>
++                  <entry key="branch">
++                    <value>
++                      <list>
++                        <option value="fix/mapper-profile" />
++                      </list>
++                    </value>
++                  </entry>
++                </map>
++              </option>
++            </State>
+           </value>
+         </entry>
+       </map>
+@@ -159,5 +262,53 @@
+   </component>
+   <component name="VcsManagerConfiguration">
+     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
++    <MESSAGE value="fix: Adiciona mapeamento&#10;* fix: Cria e registra o perfil de AutoMapper para mapear SaleProfile&#10;* fix: Cria e registra o perfil de AutoMapper para mapear UserProfile" />
++    <MESSAGE value="feat: criar domínio de saleItem e migrações&#10;* feat: criar domínio de saleItem com validações&#10;* feat: criar migração de saleItem&#10;* feat: associar nome da saleItem ao sale no aplicativo&#10;* feat: implementa repositório de saleItem&#10;* feat: associar nome da saleItems ao sale no aplicativo" />
++    <option name="LAST_COMMIT_MESSAGE" value="feat: criar domínio de saleItem e migrações&#10;* feat: criar domínio de saleItem com validações&#10;* feat: criar migração de saleItem&#10;* feat: associar nome da saleItem ao sale no aplicativo&#10;* feat: implementa repositório de saleItem&#10;* feat: associar nome da saleItems ao sale no aplicativo" />
++  </component>
++  <component name="XDebuggerManager">
++    <breakpoint-manager>
++      <breakpoints>
++        <line-breakpoint type="DotNet Breakpoints">
++          <url>file://$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.WebApi/Features/Users/UsersController.cs</url>
++          <line>73</line>
++          <properties documentPath="C:\Workspace\abi-gth-omnia-developer-evaluation\src\Ambev.DeveloperEvaluation.WebApi\Features\Users\UsersController.cs" containingFunctionPresentation="Method 'GetUser'">
++            <startOffsets>
++              <option value="3000" />
++            </startOffsets>
++            <endOffsets>
++              <option value="3001" />
++            </endOffsets>
++          </properties>
++          <option name="timeStamp" value="1" />
++        </line-breakpoint>
++        <line-breakpoint type="DotNet Breakpoints">
++          <url>file://$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.Application/Users/GetUser/GetUserHandler.cs</url>
++          <line>36</line>
++          <properties documentPath="C:\Workspace\abi-gth-omnia-developer-evaluation\src\Ambev.DeveloperEvaluation.Application\Users\GetUser\GetUserHandler.cs" containingFunctionPresentation="Method 'Handle'">
++            <startOffsets>
++              <option value="1255" />
++            </startOffsets>
++            <endOffsets>
++              <option value="1256" />
++            </endOffsets>
++          </properties>
++          <option name="timeStamp" value="2" />
++        </line-breakpoint>
++        <line-breakpoint type="DotNet Breakpoints">
++          <url>file://$PROJECT_DIR$/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesHandler.cs</url>
++          <line>32</line>
++          <properties documentPath="C:\Workspace\abi-gth-omnia-developer-evaluation\src\Ambev.DeveloperEvaluation.Application\Sales\ListSales\ListSalesHandler.cs" containingFunctionPresentation="Method 'Handle'">
++            <startOffsets>
++              <option value="1413" />
++            </startOffsets>
++            <endOffsets>
++              <option value="1414" />
++            </endOffsets>
++          </properties>
++          <option name="timeStamp" value="5" />
++        </line-breakpoint>
++      </breakpoints>
++    </breakpoint-manager>
+   </component>
+ </project>
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleResponse.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Text.Json.Serialization;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n/// API response model for UpdateSale operation\r\n/// </summary>\r\npublic class UpdateSaleResponse\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\t[JsonIgnore]\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\t[JsonIgnore]\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleResponse.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleResponse.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleResponse.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleResponse.cs	(date 1743361460661)
+@@ -1,4 +1,5 @@
+ using System.Text.Json.Serialization;
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ 
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
+ 
+@@ -31,11 +32,16 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	[JsonIgnore]
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;\r\n\r\n/// <summary>\r\n/// Represents a command to list sales, including details like sale ID, date, customer ID, branch ID, and total\r\n/// amount. Also tracks sale items and cancellation status.\r\n/// </summary>\r\npublic abstract class ListSalesCommand : IRequest<IEnumerable<ListSalesResult>>\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesCommand.cs	(date 1743358418349)
+@@ -1,3 +1,4 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ using MediatR;
+ 
+ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+@@ -31,10 +32,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesResponse.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales\r\n{\r\n\t/// <summary>\t\r\n\t/// API response model for ListSales operation\r\n\t/// </summary>\r\n\tpublic class ListSalesResponse\r\n\t{\r\n\t\t/// <summary>\r\n\t\t/// The sale's unique identifier.\r\n\t\t/// </summary>\r\n\t\tpublic Guid Id { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// The date and time the sale was made.\r\n\t\t/// </summary>\r\n\t\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t\t/// <summary>\r\n\t\t/// The customer's unique identifier.\r\n\t\t/// </summary>\r\n\t\tpublic Guid CustomerId { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// The branch's unique identifier.\r\n\t\t/// </summary>\r\n\t\tpublic Guid BranchId { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// The total amount of the sale.\r\n\t\t/// </summary>\r\n\t\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t\t/// </summary>\r\n\t\tpublic bool IsCancelled { get; set; } = false;\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesResponse.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesResponse.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesResponse.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/ListSales/ListSalesResponse.cs	(date 1743361275760)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales
+ {
+ 	/// <summary>	
+@@ -28,11 +30,16 @@
+ 		/// <summary>
+ 		/// The total amount of the sale.
+ 		/// </summary>
+-		public decimal TotalAmount { get; set; }
++		public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 		/// <summary>
+ 		/// Indicates whether an operation has been cancelled. Defaults to false.
+ 		/// </summary>
+ 		public bool IsCancelled { get; set; } = false;
++		
++		/// <summary>
++		/// The items of the saleItema.
++		/// </summary>
++		public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Domain/Entities/SaleItem.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Common;\r\nusing Microsoft.AspNetCore.Mvc.ModelBinding.Validation;\r\nusing System.Text.Json.Serialization;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Domain.Entities;\r\n\r\n/// <summary>\r\n/// Represents a sale item.\r\n/// </summary>\r\npublic class SaleItem : BaseEntity\r\n{\r\n\t\r\n\t/// <summary>\r\n\t/// The product's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid ProductId { get; private set; }\r\n\r\n\t/// <summary>\r\n\t/// Represents the unique identifier for a sale. It is of type Guid, ensuring a globally unique value.\r\n\t/// </summary>\r\n\tpublic Guid SaleId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The quantity of the product.\r\n\t/// </summary>\r\n\tpublic int Quantity { get; private set; }\r\n\r\n\t/// <summary>\r\n\t/// The unit price of the product.\r\n\t/// </summary>\r\n\tpublic decimal UnitPrice { get; private set; }\r\n\r\n\t/// <summary>\r\n\t/// The discount amount.\r\n\t/// </summary>\r\n\tpublic decimal Discount { get; private set; }\r\n\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the item.\r\n\t/// </summary>\r\n\tpublic decimal TotalItemAmount => (UnitPrice * Quantity) - Discount;\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = true;\r\n\r\n\t[JsonIgnore]\r\n\t[ValidateNever]\r\n\tpublic Sale? Sale { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of the <see cref=\"SaleItem\"/> class.\r\n\t/// </summary>\r\n\t/// <param name=\"productId\"></param>\r\n\t/// <param name=\"quantity\"></param>\r\n\t/// <param name=\"unitPrice\"></param>\r\n\tpublic SaleItem(Guid productId, int quantity, decimal unitPrice)\r\n\t{\r\n\t\tProductId = productId;\r\n\t\tQuantity = quantity;\r\n\t\tUnitPrice = unitPrice;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Cancels the saleItem.\r\n\t/// </summary>\r\n\tpublic void Cancel()\r\n\t{\r\n\t\tIsCancelled = true;\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Domain/Entities/SaleItem.cs b/src/Ambev.DeveloperEvaluation.Domain/Entities/SaleItem.cs
+--- a/src/Ambev.DeveloperEvaluation.Domain/Entities/SaleItem.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Domain/Entities/SaleItem.cs	(date 1743360350426)
+@@ -61,6 +61,7 @@
+ 		ProductId = productId;
+ 		Quantity = quantity;
+ 		UnitPrice = unitPrice;
++		Discount = CalculateDiscount(quantity, unitPrice);
+ 	}
+ 
+ 	/// <summary>
+@@ -70,4 +71,19 @@
+ 	{
+ 		IsCancelled = true;
+ 	}
++	
++	/// <summary>
++	/// Calculates the discount amount.
++	/// </summary>
++	/// <param name="quantity"></param>
++	/// <param name="unitPrice"></param>
++	/// <returns></returns>
++	/// <exception cref="ArgumentException"></exception>
++	private decimal CalculateDiscount(int quantity, decimal unitPrice)
++	{
++		if (quantity < 4) return 0;
++		if (quantity >= 4 && quantity < 10) return unitPrice * quantity * 0.10m;
++		if (quantity >= 10 && quantity <= 20) return unitPrice * quantity * 0.20m;
++		throw new ArgumentException("Cannot sell more than 20 identical items.");
++	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/DeleteSale/DeleteSaleHandler.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Repositories;\r\nusing FluentValidation;\r\nusing MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;\r\n\r\npublic class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleResponse>\r\n{\r\n\tprivate readonly ISaleRepository _saleRepository;\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of DeleteSaleHandler\r\n\t/// </summary>\r\n\t/// <param name=\"saleRepository\">The sale repository</param>\r\n\t/// <param name=\"validator\">The validator for DeleteSaleCommand</param>\r\n\tpublic DeleteSaleHandler(\r\n\t\tISaleRepository saleRepository)\r\n\t{\r\n\t\t_saleRepository = saleRepository;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Handles the DeleteSaleCommand request\r\n\t/// </summary>\r\n\t/// <param name=\"request\">The DeleteSale command</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The result of the delete operation</returns>\r\n\tpublic async Task<DeleteSaleResponse> Handle(DeleteSaleCommand request, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar validator = new DeleteSaleValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\tthrow new ValidationException(validationResult.Errors);\r\n\r\n\t\tvar success = await _saleRepository.DeleteAsync(request.Id, cancellationToken);\r\n\t\tif (!success)\r\n\t\t\tthrow new KeyNotFoundException($\"Sale with ID {request.Id} not found\");\r\n\r\n\t\treturn new DeleteSaleResponse { Success = true };\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/DeleteSale/DeleteSaleHandler.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/DeleteSale/DeleteSaleHandler.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/DeleteSale/DeleteSaleHandler.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/DeleteSale/DeleteSaleHandler.cs	(date 1743357865503)
+@@ -4,6 +4,9 @@
+ 
+ namespace Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
+ 
++/// <summary>
++/// 
++/// </summary>
+ public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleResponse>
+ {
+ 	private readonly ISaleRepository _saleRepository;
+@@ -12,9 +15,7 @@
+ 	/// Initializes a new instance of DeleteSaleHandler
+ 	/// </summary>
+ 	/// <param name="saleRepository">The sale repository</param>
+-	/// <param name="validator">The validator for DeleteSaleCommand</param>
+-	public DeleteSaleHandler(
+-		ISaleRepository saleRepository)
++	public DeleteSaleHandler(ISaleRepository saleRepository)
+ 	{
+ 		_saleRepository = saleRepository;
+ 	}
+Index: src/Ambev.DeveloperEvaluation.Domain/Entities/Sale.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Common;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Domain.Entities\r\n{\r\n\t/// <summary>\r\n\t/// Represents a sale.\r\n\t/// </summary>\r\n\tpublic class Sale : BaseEntity\r\n\t{\r\n\t\t/// <summary>\r\n\t\t/// The total amount of the sale.\r\n\t\t/// </summary>\r\n\t\tprivate decimal _totalAmount;\r\n\r\n\t\t/// <summary>\r\n\t\t/// The date and time the sale was made.\r\n\t\t/// </summary>\r\n\t\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t\t/// <summary>\r\n\t\t/// The customer's unique identifier.\r\n\t\t/// </summary>\r\n\t\tpublic Guid CustomerId { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// The branch's unique identifier.\r\n\t\t/// </summary>\r\n\t\tpublic Guid BranchId { get; set; }\r\n\r\n\t\t/// <summary>\r\n\t\t/// The total amount of the sale.\r\n\t\t/// </summary>\r\n\t\tpublic bool IsCancelled { get; set; } = false;\r\n\t\t\r\n\t\t/// <summary>\r\n\t\t/// The items of the sale.\r\n\t\t/// </summary>\r\n\t\tpublic List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();\r\n\t\t\r\n\t\t/// <summary>\r\n\t\t/// The total amount of the sale.\r\n\t\t/// </summary>\r\n\t\tpublic decimal TotalAmount\r\n\t\t{\r\n\t\t\tget => _totalAmount;\r\n\t\t\tprivate set => _totalAmount = value;\r\n\t\t}\r\n\r\n\t\tprivate Sale() { }\r\n\r\n\t\t/// <summary>\r\n\t\t/// Initializes a new instance of the <see cref=\"Sale\"/> class.\r\n\t\t/// </summary>\r\n\t\t/// <param name=\"customerId\"></param>\r\n\t\t/// <param name=\"branchId\"></param>\r\n\t\tpublic Sale(Guid customerId, Guid branchId)\r\n\t\t{\r\n\t\t\tCustomerId = customerId;\r\n\t\t\tBranchId = branchId;\r\n\t\t\tRecalculateTotal();\r\n\t\t}\r\n\r\n\t\t/// <summary>\r\n\t\t/// Adds an item to the sale.\r\n\t\t/// </summary>\r\n\t\t/// <param name=\"item\"></param>\r\n\t\tpublic void AddItem()\r\n\t\t{\r\n\t\t\tRecalculateTotal();\r\n\t\t}\r\n\r\n\t\t/// <summary>\r\n\t\t/// Cancels the sale.\r\n\t\t/// </summary>\r\n\t\tpublic void Cancel()\r\n\t\t{\r\n\t\t\tIsCancelled = true;\r\n\t\t}\r\n\r\n\t\t/// <summary>\r\n\t\t/// Recalculates the total amount of the sale.\r\n\t\t/// </summary>\r\n\t\tpublic void RecalculateTotal()\r\n\t\t{\r\n\t\t\tTotalAmount = _totalAmount;\r\n\t\t}\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Domain/Entities/Sale.cs b/src/Ambev.DeveloperEvaluation.Domain/Entities/Sale.cs
+--- a/src/Ambev.DeveloperEvaluation.Domain/Entities/Sale.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Domain/Entities/Sale.cs	(date 1743360278459)
+@@ -53,10 +53,11 @@
+ 		/// </summary>
+ 		/// <param name="customerId"></param>
+ 		/// <param name="branchId"></param>
+-		public Sale(Guid customerId, Guid branchId)
++		public Sale(Guid customerId, Guid branchId, List<SaleItem>? saleItems = null)
+ 		{
+ 			CustomerId = customerId;
+ 			BranchId = branchId;
++			SaleItems = saleItems ?? new List<SaleItem>();
+ 			RecalculateTotal();
+ 		}
+ 
+@@ -64,8 +65,9 @@
+ 		/// Adds an item to the sale.
+ 		/// </summary>
+ 		/// <param name="item"></param>
+-		public void AddItem()
++		public void AddItem(SaleItem item)
+ 		{
++			SaleItems.Add(item);
+ 			RecalculateTotal();
+ 		}
+ 
+@@ -76,13 +78,13 @@
+ 		{
+ 			IsCancelled = true;
+ 		}
+-
++		
+ 		/// <summary>
+ 		/// Recalculates the total amount of the sale.
+ 		/// </summary>
+ 		public void RecalculateTotal()
+ 		{
+-			TotalAmount = _totalAmount;
++			TotalAmount = (SaleItems ?? new List<SaleItem>()).Sum(item => item.TotalItemAmount);
+ 		}
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleProfile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\nusing AutoMapper;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;\r\n\r\npublic class UpdateSaleProfile : Profile\r\n{\r\n\tpublic UpdateSaleProfile()\r\n\t{\r\n\t\tCreateMap<UpdateSaleRequest, UpdateSaleCommand>();\r\n\t\tCreateMap<UpdateSaleRequest, UpdateSaleCommand>()\r\n\t\t   .ConstructUsing(src => new UpdateSaleCommand(\r\n\t\t\t   src.Id,\r\n\t\t\t   src.SaleDate,\r\n\t\t\t   src.CustomerId,\r\n\t\t\t   src.BranchId,\r\n\t\t\t   src.IsCancelled\r\n\t\t   ));\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleProfile.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleProfile.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleProfile.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleProfile.cs	(date 1743360722022)
+@@ -14,7 +14,8 @@
+ 			   src.SaleDate,
+ 			   src.CustomerId,
+ 			   src.BranchId,
+-			   src.IsCancelled
++			   src.IsCancelled,
++			   src.SaleItems
+ 		   ));
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleHandler.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Repositories;\r\nusing AutoMapper;\r\nusing FluentValidation;\r\nusing MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;\r\n\r\n/// <summary>\r\n/// Handler for processing GeSaleByIdCommand requests\r\n/// </summary>\r\npublic class GetSaleHandler : IRequestHandler<GetSaleCommand, GetSaleResult>\r\n{\r\n\tprivate readonly ISaleRepository _saleRepository;\r\n\tprivate readonly IMapper _mapper;\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of GetSaleByIdHandler\r\n\t/// </summary>\r\n\t/// <param name=\"saleRepository\">The sale repository</param>\r\n\t/// <param name=\"mapper\">The AutoMapper instance</param>\r\n\t/// <param name=\"validation\">The validator for GetSaleByIdCommand</param>\r\n\tpublic GetSaleHandler(\r\n\t\tISaleRepository saleRepository,\r\n\t\tIMapper mapper)\r\n\t{\r\n\t\t_saleRepository = saleRepository;\r\n\t\t_mapper = mapper;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Handles the GetSaleByIdCommand request\r\n\t/// </summary>\r\n\t/// <param name=\"request\">The GetSale command</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The sale details if found</returns>\r\n\tpublic async Task<GetSaleResult> Handle(GetSaleCommand request, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar validator = new GetSaleValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\tthrow new ValidationException(validationResult.Errors);\r\n\r\n\t\tvar sale = await _saleRepository.GetByIdAsync(request.Id, cancellationToken);\r\n\t\tif (sale == null)\r\n\t\t\tthrow new KeyNotFoundException($\"Sale with ID {request.Id} not found\");\r\n\r\n\t\treturn _mapper.Map<GetSaleResult>(sale);\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleHandler.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleHandler.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleHandler.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/GetSale/GetSaleHandler.cs	(date 1743358043349)
+@@ -18,9 +18,7 @@
+ 	/// </summary>
+ 	/// <param name="saleRepository">The sale repository</param>
+ 	/// <param name="mapper">The AutoMapper instance</param>
+-	/// <param name="validation">The validator for GetSaleByIdCommand</param>
+-	public GetSaleHandler(
+-		ISaleRepository saleRepository,
++	public GetSaleHandler(ISaleRepository saleRepository,
+ 		IMapper mapper)
+ 	{
+ 		_saleRepository = saleRepository;
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesResult.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Entities;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;\r\n\r\n/// <summary>\r\n/// Response model for ListSales operation\r\n/// </summary>\r\npublic class ListSalesResult\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesResult.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesResult.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesResult.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/ListSales/ListSalesResult.cs	(date 1743358814046)
+@@ -30,10 +30,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleRequest.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Text.Json.Serialization;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n/// Represents a request to update a sale in the system.\r\n/// </summary>\r\npublic class UpdateSaleRequest\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\t[JsonIgnore]\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\t[JsonIgnore]\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleRequest.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleRequest.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleRequest.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/UpdateSale/UpdateSaleRequest.cs	(date 1743361407231)
+@@ -1,4 +1,5 @@
+ using System.Text.Json.Serialization;
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ 
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
+ 
+@@ -31,11 +32,16 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	[JsonIgnore]
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the saleItems.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/GetSale/GetSaleResponse.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;\r\n\r\n/// <summary>\r\n/// API response model for GetSale operation\r\n/// </summary>\r\npublic class GetSaleResponse\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid Id { get; set; }\r\n\t\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\t\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\t\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\t\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/GetSale/GetSaleResponse.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/GetSale/GetSaleResponse.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/GetSale/GetSaleResponse.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/GetSale/GetSaleResponse.cs	(date 1743361064801)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
+ 
+ /// <summary>
+@@ -34,4 +36,9 @@
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;\r\nusing Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;\r\nusing Ambev.DeveloperEvaluation.Application.Sales.GetSale;\r\nusing Ambev.DeveloperEvaluation.Application.Sales.ListSales;\r\nusing Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\nusing Ambev.DeveloperEvaluation.WebApi.Common;\r\nusing Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;\r\nusing Ambev.DeveloperEvaluation.WebApi.Features.Sales.DeleteSale;\r\nusing Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;\r\nusing Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;\r\nusing Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;\r\nusing AutoMapper;\r\nusing MediatR;\r\nusing Microsoft.AspNetCore.Mvc;\r\n\r\nnamespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;\r\n\r\n/// <summary>\r\n/// Controller for managing sale operations\r\n/// </summary>\r\n[ApiController]\r\n[Route(\"api/[controller]\")]\r\npublic class SalesController : ControllerBase\r\n{\r\n\tprivate readonly IMediator _mediator;\r\n\tprivate readonly IMapper _mapper;\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of SalesController\r\n\t/// </summary>\r\n\t/// <param name=\"mediator\">The mediator instance</param>\r\n\t/// <param name=\"mapper\">The AutoMapper instance</param>\r\n\tpublic SalesController(IMediator mediator, IMapper mapper)\r\n\t{\r\n\t\t_mediator = mediator;\r\n\t\t_mapper = mapper;\r\n\t}\r\n\t/// <summary>\r\n\t/// Creates a new sale\r\n\t/// </summary>\r\n\t/// <param name=\"request\">The sale creation request</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The created sale details</returns>\r\n\t[HttpPost]\r\n\t[ProducesResponseType(typeof(ApiResponseWithData<CreateSaleResponse>), StatusCodes.Status201Created)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]\r\n\tpublic async Task<IActionResult> CreateSale([FromBody] CreateSaleRequest request, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar validator = new CreateSaleRequestValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\treturn BadRequest(validationResult.Errors);\r\n\r\n\t\tvar command = _mapper.Map<CreateSaleCommand>(request);\r\n\t\tvar response = await _mediator.Send(command, cancellationToken);\r\n\r\n\t\treturn Created(string.Empty, new ApiResponseWithData<CreateSaleResponse>\r\n\t\t{\r\n\t\t\tSuccess = true,\r\n\t\t\tMessage = \"Sale created successfully\",\r\n\t\t\tData = _mapper.Map<CreateSaleResponse>(response)\r\n\t\t});\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Retrieves a list of sale\r\n\t/// </summary>\r\n\t/// <param name=\"cancellationToken\"></param>\r\n\t/// <returns></returns>\r\n\t[HttpGet]\r\n\t[ProducesResponseType(typeof(IEnumerable<ListSalesResponse>), StatusCodes.Status200OK)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]\r\n\tpublic async Task<IActionResult> GetSales(CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar command = _mapper.Map<GetSaleCommand>(cancellationToken);\r\n\t\tvar response = await _mediator.Send(command, cancellationToken);\r\n\r\n\t\treturn Ok(new ApiResponseWithData<GetSaleResponse>\r\n\t\t{\r\n\t\t\tSuccess = true,\r\n\t\t\tMessage = \"Sale retrieved successfully\",\r\n\t\t\tData = _mapper.Map<GetSaleResponse>(response)\r\n\t\t});\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Retrieves a sale by their ID\r\n\t/// </summary>\r\n\t/// <param name=\"id\">The unique identifier of the sale</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The sale details if found</returns>\r\n\t[HttpGet(\"{id}\")]\r\n\t[ProducesResponseType(typeof(ApiResponseWithData<GetSaleResponse>), StatusCodes.Status200OK)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]\r\n\tpublic async Task<IActionResult> GetSaleById([FromRoute] Guid id, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar request = new GetSaleRequest { Id = id };\r\n\t\tvar validator = new GetSaleRequestValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\treturn BadRequest(validationResult.Errors);\r\n\r\n\t\tvar command = _mapper.Map<GetSaleCommand>(request.Id);\r\n\t\tvar response = await _mediator.Send(command, cancellationToken);\r\n\r\n\t\treturn Ok(new ApiResponseWithData<GetSaleResponse>\r\n\t\t{\r\n\t\t\tSuccess = true,\r\n\t\t\tMessage = \"Sale retrieved successfully\",\r\n\t\t\tData = _mapper.Map<GetSaleResponse>(response)\r\n\t\t});\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Deletes a sale by their ID\r\n\t/// </summary>\r\n\t/// <param name=\"id\">The unique identifier of the sale to delete</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>Success response if the sale was deleted</returns>\r\n\t[HttpDelete(\"{id}\")]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]\r\n\tpublic async Task<IActionResult> DeleteSale([FromRoute] Guid id, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar request = new DeleteSaleRequest { Id = id };\r\n\t\tvar validator = new DeleteSaleRequestValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\treturn BadRequest(validationResult.Errors);\r\n\r\n\t\tvar command = _mapper.Map<DeleteSaleCommand>(request);\r\n\t\tawait _mediator.Send(command, cancellationToken);\r\n\r\n\t\treturn Ok(new ApiResponse\r\n\t\t{\r\n\t\t\tSuccess = true,\r\n\t\t\tMessage = \"Sale deleted successfully\"\r\n\t\t});\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Updates an existing sale\r\n\t/// </summary>\r\n\t/// <param name=\"request\">The sale update request</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The updated sale details</returns>\r\n\t[HttpPut(\"{id}\")]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]\r\n\t[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]\r\n\tpublic async Task<IActionResult> UpdateSale(Guid id, [FromBody] UpdateSaleRequest request, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar validator = new UpdateSaleRequestValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(request, cancellationToken);\r\n\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\treturn BadRequest(validationResult.Errors);\r\n\r\n\t\tvar command = _mapper.Map<UpdateSaleCommand>(request);\r\n\t\tcommand.Id = id;\r\n\t\tvar response = await _mediator.Send(command, cancellationToken);\r\n\r\n\t\treturn Ok(new ApiResponse\r\n\t\t{\r\n\t\t\tSuccess = true,\r\n\t\t\tMessage = \"Sale updated successfully\"\r\n\t\t});\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/SalesController.cs	(date 1743361731914)
+@@ -71,7 +71,7 @@
+ 	[HttpGet]
+ 	[ProducesResponseType(typeof(IEnumerable<ListSalesResponse>), StatusCodes.Status200OK)]
+ 	[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+-	public async Task<IActionResult> GetSales(CancellationToken cancellationToken)
++	public async Task<IActionResult> GetListSales(CancellationToken cancellationToken)
+ 	{
+ 		var command = _mapper.Map<GetSaleCommand>(cancellationToken);
+ 		var response = await _mediator.Send(command, cancellationToken);
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleCommand.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale;\r\n\r\n/// <summary>\r\n/// Represents a sale.\r\n/// </summary>\r\npublic class CreateSaleCommand : IRequest<CreateSaleResult>\r\n{\r\n    /// <summary>\r\n    /// The customer's unique identifier.\r\n    /// </summary>\r\n    public Guid CustomerId { get; set; }\r\n\r\n    /// <summary>\r\n    /// The branch's unique identifier.\r\n    /// </summary>\r\n    public Guid BranchId { get; set; }\r\n\r\n    /// <summary>\r\n    /// The total amount of the sale.\r\n    /// </summary>\r\n    public decimal TotalAmount { get; set; }\r\n\r\n    /// <summary>\r\n    /// The total amount of the sale.\r\n    /// </summary>\r\n    public bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleCommand.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleCommand.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleCommand.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleCommand.cs	(date 1743358259549)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Common.Validation;
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ using MediatR;
+ 
+ namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+@@ -20,10 +22,26 @@
+     /// <summary>
+     /// The total amount of the sale.
+     /// </summary>
+-    public decimal TotalAmount { get; set; }
++    public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+     /// <summary>
+     /// The total amount of the sale.
+     /// </summary>
+     public bool IsCancelled { get; set; } = false;
++    
++    /// <summary>
++    /// The items of the sale.
++    /// </summary>
++    public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
++    
++    public ValidationResultDetail Validate()
++    {
++        var validator = new CreateSaleCommandValidator();
++        var result = validator.Validate(this);
++        return new ValidationResultDetail
++        {
++            IsValid = result.IsValid,
++            Errors = result.Errors.Select(o => (ValidationErrorDetail)o)
++        };
++    }
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleResult.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Text.Json.Serialization;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n/// Represents the response returned after successfully updating a sale.\r\n/// </summary>\r\npublic class UpdateSaleResult\r\n{\r\n\t/// <summary>\r\n\t/// The sale's unique identifier.\r\n\t/// </summary>\r\n\t[JsonIgnore]\r\n\tpublic Guid Id { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleResult.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleResult.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleResult.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleResult.cs	(date 1743359281012)
+@@ -1,4 +1,5 @@
+ using System.Text.Json.Serialization;
++using Ambev.DeveloperEvaluation.Domain.Entities;
+ 
+ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
+ 
+@@ -31,10 +32,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
+-}
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
++}
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleHandler.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using Ambev.DeveloperEvaluation.Domain.Repositories;\r\nusing AutoMapper;\r\nusing FluentValidation;\r\nusing MediatR;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\n\r\n/// <summary>\r\n///  Handler for processing UpdateSaleCommand requests\r\n/// </summary>\r\npublic class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleResult>\r\n{\r\n\tprivate readonly ISaleRepository _saleRepository;\r\n\tprivate readonly IMapper _mapper;\r\n\r\n\t/// <summary>\r\n\t/// Initializes a new instance of UpdateHandler\r\n\t/// </summary>\r\n\t/// <param name=\"saleRepository\">The sale repository</param>\r\n\t/// <param name=\"mapper\">The AutoMapper instance</param>\r\n\t/// <param name=\"validator\">The validator for UpdateSaleCommand</param>\r\n\tpublic UpdateSaleHandler(ISaleRepository saleRepository, IMapper mapper)\r\n\t{\r\n\t\t_saleRepository = saleRepository;\r\n\t\t_mapper = mapper;\r\n\t}\r\n\r\n\t/// <summary>\r\n\t/// Handles the UpdateSaleCommand request\r\n\t/// </summary>\r\n\t/// <param name=\"command\">The UpdateSale command</param>\r\n\t/// <param name=\"cancellationToken\">Cancellation token</param>\r\n\t/// <returns>The updated sale details</returns>\r\n\tpublic async Task<UpdateSaleResult> Handle(UpdateSaleCommand command, CancellationToken cancellationToken)\r\n\t{\r\n\t\tvar validator = new UpdateSaleCommandValidator();\r\n\t\tvar validationResult = await validator.ValidateAsync(command, cancellationToken);\r\n\t\tif (!validationResult.IsValid)\r\n\t\t\tthrow new ValidationException(validationResult.Errors);\r\n\r\n\t\tvar existingSale = await _saleRepository.GetByIdAsync(command.Id, cancellationToken);\r\n\t\tif (existingSale == null)\r\n\t\t\tthrow new InvalidOperationException($\"Sale with ID {command.Id} not found\");\r\n\r\n\t\texistingSale.SaleDate = command.SaleDate;\r\n\t\texistingSale.CustomerId = command.CustomerId;\r\n\t\texistingSale.BranchId = command.BranchId;\r\n\t\texistingSale.IsCancelled = command.IsCancelled;\r\n\r\n\t\tvar updatedSale = await _saleRepository.UpdateAsync(existingSale, cancellationToken);\r\n\t\tvar result = _mapper.Map<UpdateSaleResult>(updatedSale);\r\n\t\treturn result;\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleHandler.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleHandler.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleHandler.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleHandler.cs	(date 1743359140699)
+@@ -46,7 +46,14 @@
+ 		existingSale.CustomerId = command.CustomerId;
+ 		existingSale.BranchId = command.BranchId;
+ 		existingSale.IsCancelled = command.IsCancelled;
++		
++		if (command.SaleItems != null && command.SaleItems.Any())
++		{
++			existingSale.SaleItems = command.SaleItems;
++		}
+ 
++		existingSale.RecalculateTotal();
++
+ 		var updatedSale = await _saleRepository.UpdateAsync(existingSale, cancellationToken);
+ 		var result = _mapper.Map<UpdateSaleResult>(updatedSale);
+ 		return result;
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleValidator.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using FluentValidation;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;\r\n\r\npublic class UpdateSaleCommandValidator : AbstractValidator<UpdateSaleCommand>\r\n{\r\n\t/// <summary>\r\n\t/// Validator for the UpdateSaleCommand.\r\n\t/// </summary>\r\n\t/// <remarks>\r\n\t/// Validation rules include:\r\n\t/// - CustomerId: Must not be empty.\r\n\t/// - BranchId: Must not be empty.\r\n\t/// - SaleItems: Must contain at least one sale item.\r\n\t/// - TotalAmount: Must be greater than or equal to 0.\r\n\t/// </remarks>\r\n\tpublic UpdateSaleCommandValidator()\r\n\t{\r\n\t\tRuleFor(sale => sale.CustomerId)\r\n\t\t\t   .NotEmpty().WithMessage(\"CustomerId must not be empty.\");\r\n\t\tRuleFor(sale => sale.BranchId)\r\n\t\t\t.NotEmpty().WithMessage(\"BranchId must not be empty.\");\r\n\t\tRuleFor(sale => sale.TotalAmount)\r\n\t\t\t.GreaterThanOrEqualTo(0)\r\n\t\t\t.WithMessage(\"TotalAmount must be greater than or equal to 0.\");\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleValidator.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleValidator.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleValidator.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/UpdateSale/UpdateSaleValidator.cs	(date 1743359361407)
+@@ -3,8 +3,7 @@
+ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
+ 
+ public class UpdateSaleCommandValidator : AbstractValidator<UpdateSaleCommand>
+-{
+-	/// <summary>
++{/// <summary>
+ 	/// Validator for the UpdateSaleCommand.
+ 	/// </summary>
+ 	/// <remarks>
+@@ -13,15 +12,20 @@
+ 	/// - BranchId: Must not be empty.
+ 	/// - SaleItems: Must contain at least one sale item.
+ 	/// - TotalAmount: Must be greater than or equal to 0.
++	/// - Each SaleItem is validated using the SaleItemValidator.
+ 	/// </remarks>
+ 	public UpdateSaleCommandValidator()
+ 	{
+ 		RuleFor(sale => sale.CustomerId)
+-			   .NotEmpty().WithMessage("CustomerId must not be empty.");
++			.NotEmpty().WithMessage("CustomerId must not be empty.");
+ 		RuleFor(sale => sale.BranchId)
+ 			.NotEmpty().WithMessage("BranchId must not be empty.");
++		RuleFor(sale => sale.SaleItems)
++			.NotEmpty().WithMessage("Sale must have at least one sale item.");
+ 		RuleFor(sale => sale.TotalAmount)
+ 			.GreaterThanOrEqualTo(0)
+ 			.WithMessage("TotalAmount must be greater than or equal to 0.");
++		RuleForEach(sale => sale.SaleItems)
++			.SetValidator(new SaleItemValidator());
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleResponse.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;\r\n\r\n/// <summary>\r\n/// Represents a response to a successful sale creation request.\r\n/// </summary>\r\npublic class CreateSaleResponse\r\n{\r\n\t/// <summary>\r\n\t/// The date and time the sale was made.\r\n\t/// </summary>\r\n\tpublic DateTime SaleDate { get; set; } = DateTime.UtcNow;\r\n\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether an operation has been cancelled. Defaults to false.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleResponse.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleResponse.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleResponse.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleResponse.cs	(date 1743360927862)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
+ 
+ /// <summary>
+@@ -23,10 +25,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether an operation has been cancelled. Defaults to false.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; private set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleValidator.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using FluentValidation;\r\n\r\nnamespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale;\r\n\r\n/// <summary>\r\n/// Validator for the CreateSaleCommand\r\n/// </summary>\r\npublic class CreateSaleCommandValidator : AbstractValidator<CreateSaleCommand>\r\n{\r\n\t/// <summary>\r\n\t/// Validator for the UpdateSaleCommand.\r\n\t/// </summary>\r\n\t/// <remarks>\r\n\t/// Validation rules include:\r\n\t/// - CustomerId: Must not be empty.\r\n\t/// - BranchId: Must not be empty.\r\n\t/// - SaleItems: Must contain at least one sale item.\r\n\t/// - TotalAmount: Must be greater than or equal to 0.\r\n\t/// - Each SaleItem is validated using the SaleItemValidator.\r\n\t/// </remarks>\r\n\tpublic CreateSaleCommandValidator()\r\n\t{\r\n\t\tRuleFor(sale => sale.CustomerId)\r\n\t\t\t   .NotEmpty().WithMessage(\"CustomerId must not be empty.\");\r\n\t\tRuleFor(sale => sale.BranchId)\r\n\t\t\t.NotEmpty().WithMessage(\"BranchId must not be empty.\");\r\n\t\t\r\n\t}\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleValidator.cs b/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleValidator.cs
+--- a/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleValidator.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.Application/Sales/CreateSale/CreateSaleValidator.cs	(date 1743357734551)
+@@ -24,6 +24,12 @@
+ 			   .NotEmpty().WithMessage("CustomerId must not be empty.");
+ 		RuleFor(sale => sale.BranchId)
+ 			.NotEmpty().WithMessage("BranchId must not be empty.");
+-		
++		RuleFor(sale => sale.SaleItems)
++			.NotEmpty().WithMessage("Sale must have at least one sale item.");
++		RuleFor(sale => sale.TotalAmount)
++			.GreaterThanOrEqualTo(0)
++			.WithMessage("TotalAmount must be greater than or equal to 0.");
++		RuleForEach(sale => sale.SaleItems)
++			.SetValidator(new SaleItemValidator());
+ 	}
+ }
+\ No newline at end of file
+Index: src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequest.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;\r\n\r\n/// <summary>\r\n/// Represents a request to create a new sale in the system.\r\n/// </summary>\r\npublic class CreateSaleRequest\r\n{\r\n\t/// <summary>\r\n\t/// The customer's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid CustomerId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The branch's unique identifier.\r\n\t/// </summary>\r\n\tpublic Guid BranchId { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// The total amount of the sale.\r\n\t/// </summary>\r\n\tpublic decimal TotalAmount { get; set; }\r\n\r\n\t/// <summary>\r\n\t/// Indicates whether a process or operation has been cancelled. Defaults to false, meaning not cancelled.\r\n\t/// </summary>\r\n\tpublic bool IsCancelled { get; set; } = false;\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequest.cs b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequest.cs
+--- a/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequest.cs	(revision c1472bba647d8eb50425edb0f37c79f57c93a75d)
++++ b/src/Ambev.DeveloperEvaluation.WebApi/Features/Sales/CreateSale/CreateSaleRequest.cs	(date 1743360834878)
+@@ -1,3 +1,5 @@
++using Ambev.DeveloperEvaluation.Domain.Entities;
++
+ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
+ 
+ /// <summary>
+@@ -18,10 +20,15 @@
+ 	/// <summary>
+ 	/// The total amount of the sale.
+ 	/// </summary>
+-	public decimal TotalAmount { get; set; }
++	public decimal TotalAmount => SaleItems.Sum(i => i.TotalItemAmount);
+ 
+ 	/// <summary>
+ 	/// Indicates whether a process or operation has been cancelled. Defaults to false, meaning not cancelled.
+ 	/// </summary>
+ 	public bool IsCancelled { get; set; } = false;
++	
++	/// <summary>
++	/// The items of the sale.
++	/// </summary>
++	public List<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+ }
+\ No newline at end of file
