@@ -79,16 +79,18 @@ jobs:
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      
+      - name: Add .NET tools to PATH
+        shell: bash
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Generate merged coverage report
         if: steps.coverage-files.outputs.files_count != '0'
         shell: bash
-        env:
-          REPORTGENERATOR: $HOME/.dotnet/tools/reportgenerator
         run: |
           mkdir -p coverage
           inputs=$(paste -sd ';' coverage-files.txt)
-          "$REPORTGENERATOR" -reports:"$inputs" -targetdir:"coverage" -reporttypes:"Html;Cobertura"
+          reportgenerator -reports:"$inputs" -targetdir:"coverage" -reporttypes:"Html;Cobertura"
           echo "Merged coverage generated at ./coverage"
 
       - name: Upload Test Results
