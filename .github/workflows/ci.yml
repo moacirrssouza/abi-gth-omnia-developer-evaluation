@@ -1,0 +1,107 @@
+name: CI - Build, Test and Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+      - 'release/*'
+      - 'hotfix/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+      - 'release/*'
+      - 'hotfix/*'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Wait for services
+        shell: bash
+        run: |
+          for port in 6379 27017; do
+            for i in $(seq 1 30); do
+              (echo > /dev/tcp/localhost/$port) >/dev/null 2>&1 && break || sleep 2
+            done
+          done
+
+      - name: Restore Unit Tests
+        run: dotnet restore tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj
+
+      - name: Restore Integration Tests
+        run: dotnet restore tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj
+
+      - name: Restore Functional Tests
+        run: dotnet restore tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj
+
+      - name: Test (Unit) with Coverage
+        run: dotnet test tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=unit.trx"
+
+      - name: Test (Integration) with Coverage
+        run: dotnet test tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=integration.trx"
+
+      - name: Test (Functional) with Coverage
+        run: dotnet test tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=functional.trx"
+
+      - name: Find coverage files
+        id: coverage-files
+        shell: bash
+        run: |
+          echo "Searching for coverage.cobertura.xml files..."
+          mapfile -t files < <(find . -type f -name "coverage.cobertura.xml")
+          for f in "${files[@]}"; do
+            echo "Found coverage file: $f"
+          done
+          printf "%s\n" "${files[@]}" > coverage-files.txt
+          echo "files_count=${#files[@]}" >> $GITHUB_OUTPUT
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate merged coverage report
+        if: steps.coverage-files.outputs.files_count != '0'
+        shell: bash
+        env:
+          REPORTGENERATOR: $HOME/.dotnet/tools/reportgenerator
+        run: |
+          mkdir -p coverage
+          inputs=$(paste -sd ';' coverage-files.txt)
+          "$REPORTGENERATOR" -reports:"$inputs" -targetdir:"coverage" -reporttypes:"Html;Cobertura"
+          echo "Merged coverage generated at ./coverage"
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+            **/TestResults/**/coverage.cobertura.xml
+
+      - name: Upload Coverage Report
+        if: steps.coverage-files.outputs.files_count != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
