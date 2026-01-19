@@ -1,6 +1,7 @@
-using MediatR;
-using FluentValidation;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Domain.Events;
+using FluentValidation;
+using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Users.DeleteUser;
 
@@ -10,6 +11,7 @@ namespace Ambev.DeveloperEvaluation.Application.Users.DeleteUser;
 public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, DeleteUserResponse>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IPublisher _publisher;
 
     /// <summary>
     /// Initializes a new instance of DeleteUserHandler
@@ -17,9 +19,11 @@ public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, DeleteUserRe
     /// <param name="userRepository">The user repository</param>
     /// <param name="validator">The validator for DeleteUserCommand</param>
     public DeleteUserHandler(
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IPublisher publisher)
     {
         _userRepository = userRepository;
+        _publisher = publisher;
     }
 
     /// <summary>
@@ -40,6 +44,7 @@ public class DeleteUserHandler : IRequestHandler<DeleteUserCommand, DeleteUserRe
         if (!success)
             throw new KeyNotFoundException($"User with ID {request.Id} not found");
 
+        await _publisher.Publish(new UserDeletedEvent(request.Id), cancellationToken);
         return new DeleteUserResponse { Success = true };
     }
 }

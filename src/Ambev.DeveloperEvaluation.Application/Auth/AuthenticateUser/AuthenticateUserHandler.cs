@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using Ambev.DeveloperEvaluation.Domain.Specifications;
@@ -26,10 +24,26 @@ namespace Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser
         public async Task<AuthenticateUserResult> Handle(AuthenticateUserCommand request, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-            
-            if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.Password))
+            if (user == null)
             {
                 throw new UnauthorizedAccessException("Invalid credentials");
+            }
+
+            var stored = user.Password ?? string.Empty;
+            var isBcrypt = stored.StartsWith("$2a$") || stored.StartsWith("$2b$") || stored.StartsWith("$2y$");
+            var passwordOk = isBcrypt
+                ? _passwordHasher.VerifyPassword(request.Password, stored)
+                : stored == request.Password;
+
+            if (!passwordOk)
+            {
+                throw new UnauthorizedAccessException("Invalid credentials");
+            }
+
+            if (!isBcrypt)
+            {
+                user.Password = _passwordHasher.HashPassword(request.Password);
+                await _userRepository.UpdateAsync(user, cancellationToken);
             }
 
             var activeUserSpec = new ActiveUserSpecification();

@@ -1,4 +1,5 @@
 ﻿using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -21,12 +22,50 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.UpdatedAt).IsRequired(false);
 
         builder.Property(u => u.Status)
-            .HasConversion<string>()
+            .HasConversion(
+                v => v.ToString(),
+                v => MapStatus(v)
+            )
             .HasMaxLength(20);
 
         builder.Property(u => u.Role)
-            .HasConversion<string>()
+            .HasConversion(
+                v => v.ToString(),
+                v => MapRole(v)
+            )
             .HasMaxLength(20);
 
+    }
+
+    private static UserRole MapRole(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return UserRole.Customer;
+
+        var v = value.ToLowerInvariant();
+        return v switch
+        {
+            "user" => UserRole.Customer,
+            "customer" => UserRole.Customer,
+            "admin" => UserRole.Admin,
+            "manager" => UserRole.Manager,
+            _ => UserRole.Customer
+        };
+    }
+
+    private static UserStatus MapStatus(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return UserStatus.Unknown;
+
+        var v = value.ToLowerInvariant();
+        return v switch
+        {
+            "active" => UserStatus.Active,
+            "inactive" => UserStatus.Inactive,
+            "suspended" => UserStatus.Suspended,
+            "unknown" => UserStatus.Unknown,
+            _ => UserStatus.Unknown
+        };
     }
 }
