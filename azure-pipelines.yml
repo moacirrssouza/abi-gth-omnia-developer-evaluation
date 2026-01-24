@@ -1,0 +1,112 @@
+trigger:
+- main
+- develop
+- feature/*
+- release/*
+- hotfix/*
+
+pr:
+- main
+- develop
+- feature/*
+- release/*
+- hotfix/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  solution: 'Ambev.DeveloperEvaluation.sln'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: Build
+    displayName: 'Build Solution'
+    steps:
+    - checkout: self
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8.0'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+
+    - script: dotnet restore $(solution)
+      displayName: 'Restore dependencies'
+
+    - script: dotnet build $(solution) --configuration $(buildConfiguration) --no-restore
+      displayName: 'Build solution'
+
+- stage: Test
+  displayName: 'Test Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Test
+    displayName: 'Run Tests'
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+    - checkout: self
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8.0'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+
+    - script: dotnet restore $(solution)
+      displayName: 'Restore dependencies'
+
+    - script: |
+        dotnet test tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj \
+          --configuration $(buildConfiguration) \
+          --collect:"XPlat Code Coverage" \
+          --logger trx
+      displayName: 'Run Unit Tests'
+
+    - script: |
+        dotnet test tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj \
+          --configuration $(buildConfiguration) \
+          --collect:"XPlat Code Coverage" \
+          --logger trx
+      displayName: 'Run Integration Tests'
+
+    - script: |
+        dotnet test tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj \
+          --configuration $(buildConfiguration) \
+          --collect:"XPlat Code Coverage" \
+          --logger trx
+      displayName: 'Run Functional Tests'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        failTaskOnFailedTests: true
+
+    - script: |
+        dotnet tool install --global dotnet-reportgenerator-globaltool
+        echo "##vso[task.prependpath]$HOME/.dotnet/tools"
+      displayName: 'Install ReportGenerator'
+
+    - script: |
+        reportgenerator \
+          -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml \
+          -targetdir:$(Build.SourcesDirectory)/coverage \
+          -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+      displayName: 'Generate Code Coverage Report'
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage Results'
+      inputs:
+        summaryFileLocation: $(Build.SourcesDirectory)/coverage/Cobertura.xml
