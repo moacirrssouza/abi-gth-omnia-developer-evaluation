@@ -1,34 +1,107 @@
-# ASP.NET Core (.NET Framework)
-# Build and test ASP.NET Core projects targeting the full .NET Framework.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
 - main
+- develop
+- feature/*
+- release/*
+- hotfix/*
+
+pr:
+- main
+- develop
+- feature/*
+- release/*
+- hotfix/*
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'
 
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - 6379:6379
+  mongo:
+    image: mongo:7
+    ports:
+      - 27017:27017
+
 steps:
-- task: NuGetToolInstaller@1
+- checkout: self
 
-- task: NuGetCommand@2
+# -------------------------
+# Setup .NET
+# -------------------------
+- task: UseDotNet@2
   inputs:
-    restoreSolution: '$(solution)'
+    packageType: 'sdk'
+    version: '8.0.x'
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+# -------------------------
+# Restore
+# -------------------------
+- script: |
+    dotnet restore tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj
+    dotnet restore tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj
+    dotnet restore tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj
+  displayName: 'Restore projects'
 
-- task: VSTest@2
+# -------------------------
+# Tests + Coverage
+# -------------------------
+- script: |
+    dotnet test tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj \
+      --configuration $(buildConfiguration) \
+      --collect:"XPlat Code Coverage" \
+      --logger trx
+
+    dotnet test tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj \
+      --configuration $(buildConfiguration) \
+      --collect:"XPlat Code Coverage" \
+      --logger trx
+
+    dotnet test tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj \
+      --configuration $(buildConfiguration) \
+      --collect:"XPlat Code Coverage" \
+      --logger trx
+  displayName: 'Run tests with coverage'
+
+# -------------------------
+# Install ReportGenerator
+# -------------------------
+- script: |
+    dotnet tool install --global dotnet-reportgenerator-globaltool
+    echo "##vso[task.prependpath]$HOME/.dotnet/tools"
+  displayName: 'Install ReportGenerator'
+
+# -------------------------
+# Merge Coverage
+# -------------------------
+- script: |
+    mkdir -p coverage
+    reports=$(find . -name coverage.cobertura.xml | paste -sd ';')
+    reportgenerator \
+      -reports:"$reports" \
+      -targetdir:"coverage" \
+      -reporttypes:"Html;Cobertura"
+  displayName: 'Generate merged coverage report'
+
+# -------------------------
+# Publish Test Results
+# -------------------------
+- task: PublishTestResults@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
+
+# -------------------------
+# Publish Coverage
+# -------------------------
+- task: PublishCodeCoverageResults@2
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '**/coverage.cobertura.xml'
+    reportDirectory: 'coverage'
