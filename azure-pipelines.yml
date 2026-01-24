@@ -13,34 +13,15 @@ pr:
 - hotfix/*
 
 pool:
-  #vmImage: 'ubuntu-latest'
-  name: Default  # seu pool self-hosted
+  vmImage: 'ubuntu-latest'  # Volta para Microsoft-hosted
 
 variables:
   buildConfiguration: 'Release'
   solution: 'Ambev.DeveloperEvaluation.sln'
 
 jobs:
-- job: Build
-  displayName: 'Build Solution'
-  steps:
-  - checkout: self
-  
-  - task: UseDotNet@2
-    displayName: 'Use .NET 8.0'
-    inputs:
-      packageType: 'sdk'
-      version: '8.0.x'
-
-  - script: dotnet restore $(solution)
-    displayName: 'Restore dependencies'
-
-  - script: dotnet build $(solution) --configuration $(buildConfiguration) --no-restore
-    displayName: 'Build solution'
-
-- job: Test
-  displayName: 'Run Tests'
-  dependsOn: Build
+- job: BuildAndTest
+  displayName: 'Build and Test'
   
   services:
     redis:
@@ -66,9 +47,13 @@ jobs:
   - script: dotnet restore $(solution)
     displayName: 'Restore dependencies'
 
+  - script: dotnet build $(solution) --configuration $(buildConfiguration) --no-restore
+    displayName: 'Build solution'
+
   - script: |
       dotnet test tests/Ambev.DeveloperEvaluation.Unit/Ambev.DeveloperEvaluation.Unit.csproj \
         --configuration $(buildConfiguration) \
+        --no-build \
         --collect:"XPlat Code Coverage" \
         --logger trx \
         --results-directory $(Agent.TempDirectory)/TestResults
@@ -77,45 +62,50 @@ jobs:
   - script: |
       dotnet test tests/Ambev.DeveloperEvaluation.Integration/Ambev.DeveloperEvaluation.Integration.csproj \
         --configuration $(buildConfiguration) \
+        --no-build \
         --collect:"XPlat Code Coverage" \
         --logger trx \
         --results-directory $(Agent.TempDirectory)/TestResults
     displayName: 'Run Integration Tests'
     env:
-      REDIS_CONNECTION: localhost:6379
-      MONGO_CONNECTION: mongodb://localhost:27017
+      ConnectionStrings__Redis: localhost:6379
+      ConnectionStrings__MongoDB: mongodb://localhost:27017/testdb
 
   - script: |
       dotnet test tests/Ambev.DeveloperEvaluation.Functional/Ambev.DeveloperEvaluation.Functional.csproj \
         --configuration $(buildConfiguration) \
+        --no-build \
         --collect:"XPlat Code Coverage" \
         --logger trx \
         --results-directory $(Agent.TempDirectory)/TestResults
     displayName: 'Run Functional Tests'
     env:
-      REDIS_CONNECTION: localhost:6379
-      MONGO_CONNECTION: mongodb://localhost:27017
+      ConnectionStrings__Redis: localhost:6379
+      ConnectionStrings__MongoDB: mongodb://localhost:27017/testdb
 
   - task: PublishTestResults@2
     displayName: 'Publish Test Results'
+    condition: always()
     inputs:
       testResultsFormat: 'VSTest'
       testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
       failTaskOnFailedTests: true
+      mergeTestResults: true
 
   - script: |
       dotnet tool install --global dotnet-reportgenerator-globaltool
       export PATH="$PATH:$HOME/.dotnet/tools"
-    displayName: 'Install ReportGenerator'
-
-  - script: |
       reportgenerator \
         -reports:$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml \
         -targetdir:$(Build.SourcesDirectory)/coverage \
         -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
     displayName: 'Generate Code Coverage Report'
+    condition: succeededOrFailed()
 
   - task: PublishCodeCoverageResults@2
     displayName: 'Publish Code Coverage Results'
+    condition: succeededOrFailed()
     inputs:
-      summaryFileLocation: $(Build.SourcesDirectory)/coverage/Cobertura.xml
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(Build.SourcesDirectory)/coverage/Cobertura.xml'
+      reportDirectory: '$(Build.SourcesDirectory)/coverage'
