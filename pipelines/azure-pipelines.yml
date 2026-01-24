@@ -110,3 +110,4 @@ stages:
       displayName: 'Publish Code Coverage Results'
       inputs:
         summaryFileLocation: $(Build.SourcesDirectory)/coverage/Cobertura.xml
+        
